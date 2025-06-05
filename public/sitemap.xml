@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="UTF-8"?> 
+		<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+	<loc>https://bugkhoji.com/</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/about</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/careers</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/support</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/contact</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/login/researcher</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/login/admin</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/terms</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/privacy</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>1.0</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/researcher/dashboard</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/researcher/programs</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/researcher/reports</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/researcher/submit</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/researcher/payments</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/researcher/leaderboard</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/admin/dashboard</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/admin/manage-users</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/admin/manage-programs</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/admin/reports</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/admin/support</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+<url>
+	<loc>https://bugkhoji.com/admin/site-settings</loc>
+	<lastmod>2025-06-05T19:03:14+01:00</lastmod>
+	<priority>0.8</priority>
+</url>
+</urlset>
