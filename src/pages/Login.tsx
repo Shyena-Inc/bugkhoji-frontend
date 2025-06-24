@@ -23,7 +23,7 @@ const Login = () => {
   const getRoleTitle = () => {
     switch (role) {
       case 'researcher': return 'Security Researcher';
-      case 'admin': return 'Administrator';
+      case 'organization': return 'Organization';
       default: return 'User';
     }
   };
@@ -31,7 +31,7 @@ const Login = () => {
   const getRoleDescription = () => {
     switch (role) {
       case 'researcher': return 'Report vulnerabilities and earn rewards';
-      case 'admin': return 'Administer the BugKhoji🔍 platform';
+      case 'organization': return 'Add your organization in the BugKhoji🔍 platform';
       default: return 'Access your account';
     }
   };

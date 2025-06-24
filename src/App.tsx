@@ -25,6 +25,7 @@ import AdminReports from "./pages/admin/Reports";
 import AdminSupport from "./pages/admin/Support";
 import SiteSettings from "./pages/admin/SiteSettings";
 import NotFound from "./pages/NotFound";
+import ResearcherRegisterPage from "./pages/register/reseacherSignup";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/support" element={<Support />} />
           <Route path="/login/:role" element={<Login />} />
+          <Route path="/researcher/register" element={<ResearcherRegisterPage />} />
           <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
           <Route path="/researcher/programs" element={<Programs />} />
           <Route path="/researcher/reports" element={<Reports />} />
