@@ -13,7 +13,6 @@ import LoadingScreen from "@/components/Loading";
 import api, { endpoints } from "@/utils/api";
 import { AdminLoginFormData,ResearcherLoginFormData, OrganizationLoginFormData, ResearcherRegisterFormData,OrganizationRegisterFormData } from "@/types/auth";
 import Cookies from "js-cookie";
-// import { jwtDecode, JwtPayload } from "jwt-decode";
 
 type Props = {
   children: React.ReactNode;
@@ -26,8 +25,6 @@ export function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<UserI | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
-  // const [initialAuthCheckComplete, setInitialAuthCheckComplete] =
-  //   useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 

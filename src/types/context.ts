@@ -15,3 +15,10 @@ export type AuthContextType = {
   registerResearcher: (formData: ResearcherRegisterFormData) => Promise<void>;
   registerOrganization: (formData: OrganizationRegisterFormData) => Promise<void>;
 };
+
+export interface ErrorResponseI {
+  message: string;
+  errors?: {
+    [key: string]: string[];
+  };
+}

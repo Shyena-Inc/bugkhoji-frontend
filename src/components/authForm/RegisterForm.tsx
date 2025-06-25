@@ -1,53 +1,65 @@
-import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { endpoints } from '@/utils/api';
-import { 
-  ResearcherRegisterFormData, 
-  OrganizationRegisterFormData, 
-} from '@/types/auth'; 
-import { UserRole } from '@/types/user';
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context";
+import {
+  ResearcherRegisterFormData,
+  OrganizationRegisterFormData,
+} from "@/types/auth";
+import { UserRole } from "@/types/user";
+import { AxiosError } from "axios";
+import { ErrorResponseI } from "@/types/context";
 
 interface RegisterFormProps {
-  onSubmit?: (data: ResearcherRegisterFormData | OrganizationRegisterFormData) => void;
+  onSubmit?: (
+    data: ResearcherRegisterFormData | OrganizationRegisterFormData
+  ) => void;
   role: UserRole;
   showTitle?: boolean;
 }
 
-export default function RegisterForm({ 
-  onSubmit, 
-  role = 'RESEARCHER', 
-  showTitle = true 
+export default function RegisterForm({
+  onSubmit,
+  role = "RESEARCHER",
+  showTitle = true,
 }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  const initialFormData = role === 'RESEARCHER' 
-    ? {
-        email: '',
-        username: '',
-        firstName: '',
-        lastName: '',
-        password: '',
-        role: 'RESEARCHER' as const
-      }
-    : {
-        email: '',
-        organizationName: '',
-        website: '',
-        description: '',
-        password: '',
-        role: 'ORGANIZATION' as const
-      };
+  const navigate = useNavigate();
+  const { registerResearcher, registerOrganization } = useAuth();
 
-  const [formData, setFormData] = useState<ResearcherRegisterFormData | OrganizationRegisterFormData>(initialFormData);
+  const initialFormData =
+    role === "RESEARCHER"
+      ? {
+          email: "",
+          username: "",
+          firstName: "",
+          lastName: "",
+          password: "",
+          role: "RESEARCHER" as const,
+        }
+      : {
+          email: "",
+          organizationName: "",
+          website: "",
+          description: "",
+          password: "",
+          role: "ORGANIZATION" as const,
+        };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const [formData, setFormData] = useState<
+    ResearcherRegisterFormData | OrganizationRegisterFormData
+  >(initialFormData);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -57,41 +69,29 @@ export default function RegisterForm({
     setError(null);
 
     try {
-      const endpoint = role === 'RESEARCHER' 
-        ? endpoints.auth.registerResearcher 
-        : endpoints.auth.registerOrganization;
-
-      // Prepare the request body according to the role
-      const requestBody = role === 'RESEARCHER'
-        ? {
-            email: formData.email,
-            username: (formData as ResearcherRegisterFormData).username,
-            firstName: (formData as ResearcherRegisterFormData).firstName,
-            lastName: (formData as ResearcherRegisterFormData).lastName,
-            password: formData.password
-          }
-        : {
-            email: formData.email,
-            organizationName: (formData as OrganizationRegisterFormData).organizationName,
-            website: (formData as OrganizationRegisterFormData).website,
-            description: (formData as OrganizationRegisterFormData).description,
-            password: formData.password
-          };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+      // Prepare the payload according to the role
+      if (role === "RESEARCHER") {
+        const researcherPayload: ResearcherRegisterFormData = {
+          email: formData.email,
+          username: (formData as ResearcherRegisterFormData).username,
+          firstName: (formData as ResearcherRegisterFormData).firstName,
+          lastName: (formData as ResearcherRegisterFormData).lastName,
+          password: formData.password,
+          role: "RESEARCHER",
+        };
+        await registerResearcher(researcherPayload);
+      } else {
+        const orgPayload: OrganizationRegisterFormData = {
+          email: formData.email,
+          organizationName: (formData as OrganizationRegisterFormData)
+            .organizationName,
+          website: (formData as OrganizationRegisterFormData).website,
+          description: (formData as OrganizationRegisterFormData).description,
+          password: formData.password,
+          role: "ORGANIZATION",
+        };
+        await registerOrganization(orgPayload);
       }
-
-      const data = await response.json();
 
       // Call the onSubmit prop if provided
       if (onSubmit) {
@@ -99,20 +99,56 @@ export default function RegisterForm({
       }
 
       toast({
-        title: 'Registration successful!',
-        description: data.message || 'Your account has been created successfully',
+        title: "Registration successful!",
+        description: "Your account has been created successfully",
       });
 
       // Reset form after successful submission
       setFormData(initialFormData);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
-      toast({
-        title: 'Registration failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+
+      // Navigate to appropriate dashboard
+      const dashboardRoute =
+        role === "RESEARCHER"
+          ? "/researcher/dashboard"
+          : "/organization/dashboard";
+
+      navigate(dashboardRoute);
+    } catch (error: unknown) {
+      console.error("Registration error:", error);
+      const apiError = error as AxiosError<ErrorResponseI>;
+
+      if (apiError.response?.status === 500) {
+        console.error("Server error", apiError.response.data);
+        toast({
+          title: "Server Error try again",
+          variant: "destructive",
+        });
+        setError("Server error occurred. Please try again.");
+      } else {
+        const validationErrors = apiError.response?.data?.errors;
+
+        if (validationErrors && typeof validationErrors === "object") {
+          Object.entries(validationErrors).forEach(([, errors]) => {
+            if (Array.isArray(errors)) {
+              errors.forEach((errorMessage) => {
+                toast({
+                  title: `${errorMessage}`,
+                  variant: "destructive",
+                });
+              });
+            }
+          });
+          setError("Please check the form for validation errors.");
+        } else {
+          const errorMessage =
+            apiError.response?.data?.message || "Something went wrong";
+          toast({
+            title: errorMessage,
+            variant: "destructive",
+          });
+          setError(errorMessage);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +159,7 @@ export default function RegisterForm({
       {showTitle && (
         <div>
           <h2 className="text-xl font-semibold text-center">
-            Register as {role === 'RESEARCHER' ? 'Researcher' : 'Organization'}
+            Register as {role === "RESEARCHER" ? "Researcher" : "Organization"}
           </h2>
         </div>
       )}
@@ -147,7 +183,7 @@ export default function RegisterForm({
         />
       </div>
 
-      {role === 'RESEARCHER' ? (
+      {role === "RESEARCHER" ? (
         <>
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
@@ -197,7 +233,9 @@ export default function RegisterForm({
               name="organizationName"
               type="text"
               placeholder="Your organization name"
-              value={(formData as OrganizationRegisterFormData).organizationName}
+              value={
+                (formData as OrganizationRegisterFormData).organizationName
+              }
               onChange={handleChange}
               required
             />
@@ -238,7 +276,7 @@ export default function RegisterForm({
           <Input
             id="password"
             name="password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
             value={formData.password}
             onChange={handleChange}
@@ -251,17 +289,21 @@ export default function RegisterForm({
             className="absolute right-0 top-0 h-full px-3"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         className="w-full bg-blue-600 hover:bg-blue-700"
         disabled={isLoading}
       >
-        {isLoading ? 'Registering...' : 'Register'}
+        {isLoading ? "Registering..." : "Register"}
       </Button>
     </form>
   );

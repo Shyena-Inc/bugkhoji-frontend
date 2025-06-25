@@ -27,7 +27,7 @@ export const registerResearcher = async (data: ResearcherRegisterFormData): Prom
 export const registerOrganization = async (data: OrganizationRegisterFormData): Promise<UserI> => {
   const res = await api.post(endpoints.auth.registerOrganization, data, { withCredentials: true });
   return res.data.data;
-};
+};  
 
 // Logout
 export const logout = async () => {
