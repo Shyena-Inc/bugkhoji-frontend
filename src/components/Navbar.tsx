@@ -96,11 +96,11 @@ const Navbar = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link
-                    to="/login/admin"
+                    to="/login/organization"
                     className="w-full flex items-center px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-lg"
                   >
                     <Shield className="mr-3 h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    Admin Login
+                    Organization Login
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

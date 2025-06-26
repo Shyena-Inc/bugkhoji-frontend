@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Careers from "./pages/Careers";
@@ -25,15 +25,15 @@ import AdminReports from "./pages/admin/Reports";
 import AdminSupport from "./pages/admin/Support";
 import SiteSettings from "./pages/admin/SiteSettings";
 import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+import ResearcherRegisterPage from "./pages/register/reseacherSignup";
+import Provider from "./Providers";
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <Provider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
@@ -43,6 +43,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/support" element={<Support />} />
           <Route path="/login/:role" element={<Login />} />
+          <Route path="/researcher/register" element={<ResearcherRegisterPage />} />
           <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
           <Route path="/researcher/programs" element={<Programs />} />
           <Route path="/researcher/reports" element={<Reports />} />
@@ -55,12 +56,10 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route path="/admin/site-settings" element={<SiteSettings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </Provider>
 );
 
 export default App;
