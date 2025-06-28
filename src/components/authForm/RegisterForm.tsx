@@ -69,6 +69,8 @@ export default function RegisterForm({
     setError(null);
 
     try {
+      let registrationResult;
+      
       // Prepare the payload according to the role
       if (role === "RESEARCHER") {
         const researcherPayload: ResearcherRegisterFormData = {
@@ -79,7 +81,7 @@ export default function RegisterForm({
           password: formData.password,
           role: "RESEARCHER",
         };
-        await registerResearcher(researcherPayload);
+        registrationResult = await registerResearcher(researcherPayload);
       } else {
         const orgPayload: OrganizationRegisterFormData = {
           email: formData.email,
@@ -90,62 +92,86 @@ export default function RegisterForm({
           password: formData.password,
           role: "ORGANIZATION",
         };
-        await registerOrganization(orgPayload);
+        registrationResult = await registerOrganization(orgPayload);
       }
 
+      // Only proceed if registration was actually successful
+      // You might need to check the result based on your API response structure
+      // For example: if (registrationResult.success) or if (registrationResult.status === 'success')
+      
       // Call the onSubmit prop if provided
       if (onSubmit) {
         onSubmit(formData);
       }
 
-      toast({
-        title: "Registration successful!",
-        description: "Your account has been created successfully",
-      });
+      // Show success toast
+      if (toast) {
+        toast({
+          title: "Registration successful!",
+          description: "Your account has been created successfully",
+        });
+      }
 
       // Reset form after successful submission
       setFormData(initialFormData);
 
-      // Navigate to appropriate dashboard
+      // Navigate to appropriate dashboard only on success
       const dashboardRoute =
         role === "RESEARCHER"
           ? "/researcher/dashboard"
           : "/organization/dashboard";
 
       navigate(dashboardRoute);
+      
     } catch (error: unknown) {
       console.error("Registration error:", error);
       const apiError = error as AxiosError<ErrorResponseI>;
 
       if (apiError.response?.status === 500) {
         console.error("Server error", apiError.response.data);
-        toast({
-          title: "Server Error try again",
-          variant: "destructive",
-        });
-        setError("Server error occurred. Please try again.");
+        const errorMsg = "Server error occurred. Please try again.";
+        
+        if (toast) {
+          toast({
+            title: "Server Error",
+            description: "Please try again later",
+            variant: "destructive",
+          });
+        }
+        setError(errorMsg);
       } else {
         const validationErrors = apiError.response?.data?.errors;
 
         if (validationErrors && typeof validationErrors === "object") {
-          Object.entries(validationErrors).forEach(([, errors]) => {
+          let hasErrors = false;
+          Object.entries(validationErrors).forEach(([field, errors]) => {
             if (Array.isArray(errors)) {
               errors.forEach((errorMessage) => {
-                toast({
-                  title: `${errorMessage}`,
-                  variant: "destructive",
-                });
+                hasErrors = true;
+                if (toast) {
+                  toast({
+                    title: "Validation Error",
+                    description: `${field}: ${errorMessage}`,
+                    variant: "destructive",
+                  });
+                }
               });
             }
           });
-          setError("Please check the form for validation errors.");
+          if (hasErrors) {
+            setError("Please check the form for validation errors.");
+          }
         } else {
           const errorMessage =
             apiError.response?.data?.message || "Something went wrong";
-          toast({
-            title: errorMessage,
-            variant: "destructive",
-          });
+          
+          if (toast) {
+            toast({
+              title: "Registration Failed",
+              description: errorMessage,
+              variant: "destructive",
+            });
+          }
           setError(errorMessage);
         }
       }
