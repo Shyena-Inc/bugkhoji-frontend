@@ -95,16 +95,11 @@ export default function RegisterForm({
         registrationResult = await registerOrganization(orgPayload);
       }
 
-      // Only proceed if registration was actually successful
-      // You might need to check the result based on your API response structure
-      // For example: if (registrationResult.success) or if (registrationResult.status === 'success')
-      
-      // Call the onSubmit prop if provided
+    
       if (onSubmit) {
         onSubmit(formData);
       }
 
-      // Show success toast
       if (toast) {
         toast({
           title: "Registration successful!",
@@ -112,10 +107,8 @@ export default function RegisterForm({
         });
       }
 
-      // Reset form after successful submission
       setFormData(initialFormData);
 
-      // Navigate to appropriate dashboard only on success
       const dashboardRoute =
         role === "RESEARCHER"
           ? "/researcher/dashboard"
