@@ -26,6 +26,7 @@ import AdminSupport from "./pages/admin/Support";
 import SiteSettings from "./pages/admin/SiteSettings";
 import NotFound from "./pages/NotFound";
 import ResearcherRegisterPage from "./pages/register/reseacherSignup";
+import OrganizationRegisterPage from "./pages/register/organizationSignup";
 import ResearcherLoginPage from "./pages/login/ResearcherLogin";
 import Provider from "./Providers";
 
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route path="/admin/site-settings" element={<SiteSettings />} />
+          <Route path="/organization/register" element={<OrganizationRegisterPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
     </TooltipProvider>
