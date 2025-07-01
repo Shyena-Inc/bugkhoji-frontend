@@ -7,10 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ResearcherLayout from '@/components/ResearcherLayout';
+import {useGetAllPrograms} from '@/api/programs'
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Programs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const {data, isLoading} = useGetAllPrograms(page);
+
+  const handlePreviousPage = ()=>{
+    if(page >1){
+      setPage(page - 1)
+    }
+  };
+
+  const handleNextPage = () =>{
+    if(data && page < Math.ceil(data?.data?.length / 8)){
+      setPage(page + 1)
+    }
+  };
 
   const programs = [
     {
@@ -57,12 +73,12 @@ const Programs = () => {
     }
   ];
 
-  const filteredPrograms = programs.filter(program => {
-    const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         program.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || program.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  // const filteredPrograms = programs.filter(program => {
+  //   const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //                        program.company.toLowerCase().includes(searchTerm.toLowerCase());
+  //   const matchesFilter = filterStatus === 'all' || program.status === filterStatus;
+  //   return matchesSearch && matchesFilter;
+  // });
 
   return (
     <ResearcherLayout>
@@ -101,7 +117,10 @@ const Programs = () => {
 
         {/* Programs Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredPrograms.map((program) => (
+          {isLoading ? Array.from({ length: 8 }).map((_, index) => (
+                  <Skeleton key={index} className="bg-gray-200 w-full h-48" />
+                ))
+              :  data?.data?.map((program) => (
             <Card key={program.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -167,7 +186,7 @@ const Programs = () => {
           ))}
         </div>
 
-        {filteredPrograms.length === 0 && (
+        {data?.length === 0 && (
           <div className="text-center py-12">
             <Shield className="mx-auto h-12 w-12 text-slate-400" />
             <h3 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">No programs found</h3>

@@ -7,7 +7,7 @@ let logoutCallback: (() => void) | null = null;
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
+  headers: {  
     'Content-Type': 'application/json',
   },
   withCredentials: true
@@ -99,7 +99,7 @@ export const endpoints = {
   },
 
   user: {
-    profile: '/user/profile',
+    profile: (id:string)=>`user/getUserProfile/${id}`,
     updateProfile: '/user/profile',
     uploadAvatar: '/user/avatar',
     getUserById: (id: string) => `/user/${id}`,
