@@ -150,6 +150,7 @@ const Login = () => {
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className='relative'> 
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
@@ -158,7 +159,17 @@ const Login = () => {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       required={!isLogin}
-                    />
+                      />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>   
+                      </div>
                   </div>
                 )}
                 

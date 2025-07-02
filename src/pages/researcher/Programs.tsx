@@ -73,12 +73,12 @@ const Programs = () => {
     }
   ];
 
-  // const filteredPrograms = programs.filter(program => {
-  //   const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //                        program.company.toLowerCase().includes(searchTerm.toLowerCase());
-  //   const matchesFilter = filterStatus === 'all' || program.status === filterStatus;
-  //   return matchesSearch && matchesFilter;
-  // });
+  const filteredPrograms = programs.filter(program => {
+    const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         program.company.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || program.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <ResearcherLayout>
@@ -120,7 +120,7 @@ const Programs = () => {
           {isLoading ? Array.from({ length: 8 }).map((_, index) => (
                   <Skeleton key={index} className="bg-gray-200 w-full h-48" />
                 ))
-              :  data?.data?.map((program) => (
+              :  filteredPrograms.map((program) => (
             <Card key={program.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">

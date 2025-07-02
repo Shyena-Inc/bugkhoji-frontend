@@ -29,6 +29,7 @@ export default function RegisterForm({
 }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,21 +38,21 @@ export default function RegisterForm({
   const initialFormData =
     role === "RESEARCHER"
       ? {
-          email: "",
-          username: "",
-          firstName: "",
-          lastName: "",
-          password: "",
-          role: "RESEARCHER" as const,
-        }
+        email: "",
+        username: "",
+        firstName: "",
+        lastName: "",
+        password: "",
+        role: "RESEARCHER" as const,
+      }
       : {
-          email: "",
-          organizationName: "",
-          website: "",
-          description: "",
-          password: "",
-          role: "ORGANIZATION" as const,
-        };
+        email: "",
+        organizationName: "",
+        website: "",
+        description: "",
+        password: "",
+        role: "ORGANIZATION" as const,
+      };
 
   const [formData, setFormData] = useState<
     ResearcherRegisterFormData | OrganizationRegisterFormData
@@ -70,7 +71,21 @@ export default function RegisterForm({
 
     try {
       let registrationResult;
-      
+
+      if (formData.password !== confirmPassword) {
+        setIsLoading(false);
+        setError("Passwords do not match.");
+        if (toast) {
+          toast({
+            title: "Password Mismatch",
+            description: "Password and Confirm Password must be the same.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+
       // Prepare the payload according to the role
       if (role === "RESEARCHER") {
         const researcherPayload: ResearcherRegisterFormData = {
@@ -95,7 +110,7 @@ export default function RegisterForm({
         registrationResult = await registerOrganization(orgPayload);
       }
 
-    
+
       if (onSubmit) {
         onSubmit(formData);
       }
@@ -115,15 +130,14 @@ export default function RegisterForm({
           : "/organization/dashboard";
 
       navigate(dashboardRoute);
-      
+
     } catch (error: unknown) {
       console.error("Registration error:", error);
       const apiError = error as AxiosError<ErrorResponseI>;
-
       if (apiError.response?.status === 500) {
         console.error("Server error", apiError.response.data);
         const errorMsg = "Server error occurred. Please try again.";
-        
+
         if (toast) {
           toast({
             title: "Server Error",
@@ -157,7 +171,7 @@ export default function RegisterForm({
         } else {
           const errorMessage =
             apiError.response?.data?.message || "Something went wrong";
-          
+
           if (toast) {
             toast({
               title: "Registration Failed",
@@ -316,6 +330,36 @@ export default function RegisterForm({
           </Button>
         </div>
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 h-full px-3"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+
+
 
       <Button
         type="submit"
