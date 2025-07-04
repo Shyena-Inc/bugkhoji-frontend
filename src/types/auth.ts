@@ -4,6 +4,7 @@ export type ResearcherRegisterFormData = {
   firstName: string;
   lastName: string;
   password: string;
+  termsAccepted:boolean;
   role: 'RESEARCHER';
 };
 
@@ -13,6 +14,7 @@ export type OrganizationRegisterFormData = {
   website: string;
   description: string;
   password: string;
+  termsAccepted:boolean;
   role: 'ORGANIZATION';
 };
 

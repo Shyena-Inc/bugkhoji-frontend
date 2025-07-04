@@ -11,7 +11,6 @@ import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
-import Login from "./pages/Login";
 import ResearcherDashboard from "./pages/researcher/Dashboard";
 import Programs from "./pages/researcher/Programs";
 import Reports from "./pages/researcher/Reports";
@@ -44,9 +43,8 @@ const App = () => (
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/support" element={<Support />} />
-          <Route path="/login/:role" element={<Login />} />
-          <Route path="/researcher/register" element={<ResearcherRegisterPage />} />
-          <Route path="/researcher/login" element={<ResearcherLoginPage />} />
+          <Route path="/register/researcher" element={<ResearcherRegisterPage />} />
+          <Route path="/login/researcher" element={<ResearcherLoginPage />} />
           <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
           <Route path="/researcher/programs" element={<Programs />} />
           <Route path="/researcher/reports" element={<Reports />} />
@@ -59,7 +57,7 @@ const App = () => (
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/support" element={<AdminSupport />} />
           <Route path="/admin/site-settings" element={<SiteSettings />} />
-          <Route path="/organization/register" element={<OrganizationRegisterPage />} />
+          <Route path="/register/organization" element={<OrganizationRegisterPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
     </TooltipProvider>

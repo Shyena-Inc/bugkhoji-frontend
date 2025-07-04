@@ -28,14 +28,27 @@ export function AuthProvider({ children }: Props) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser  && storedUser !== "undefined") {
-      setUser(JSON.parse(storedUser));
+ 
+useEffect(() => {
+  console.log('=== AUTH PROVIDER DEBUG ===');
+  const storedUser = localStorage.getItem("currentUser");
+  console.log('Stored user from localStorage:', storedUser);
+  
+  if (storedUser && storedUser !== "undefined") {
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      console.log('Parsed user:', parsedUser);
+      setUser(parsedUser);
+    } catch (error) {
+      console.error('Error parsing stored user:', error);
     }
-    setLoading(false);
-  }, []);
-
+  } else {
+    console.log('No valid user found in localStorage');
+  }
+  
+  console.log('Auth loading set to false');
+  setLoading(false);
+}, []);
   useEffect(() => {
     const userFromURL = searchParams.get("currentUser");
 
@@ -139,33 +152,53 @@ export function AuthProvider({ children }: Props) {
       [toast]
     );
 
-    const loginResearcher = useCallback(
-      async (login: AdminLoginFormData) => {
-        try {
-          const { data } = await api.post(endpoints.auth.loginResearcher, login, {
-            withCredentials: true,
-          });
+    // Add these debug logs to your loginResearcher function in auth-context.tsx
 
-          const token = Cookies.get("__accessToken_");
+const loginResearcher = useCallback(
+  async (login: ResearcherLoginFormData) => {
+    try {
+      console.log('=== LOGIN RESEARCHER DEBUG ===');
+      console.log('Login data:', login);
+      
+      const { data } = await api.post(endpoints.auth.loginResearcher, login, {
+        withCredentials: true,
+      });
+      
+      console.log('Login API response:', data);
+      
+      const token = Cookies.get("__accessToken_");
+      console.log('Access token from cookies:', token);
+      
+      console.log('Setting user data:', data.data);
+      setUser(data.data);
+      
+      api.defaults.headers["Authorization"] = `Bearer ${token}`;
+      localStorage.setItem("currentUser", JSON.stringify(data.data));
+      
+      console.log('User set in localStorage:', localStorage.getItem("currentUser"));
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+        variant: "default",
+      });
 
-          setUser(data.data);
-          api.defaults.headers["Authorization"] = `Bearer ${token}`;
-          localStorage.setItem("currentUser", JSON.stringify(data.data));
+      navigate('/dashboard');
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  },
+  [toast, navigate] 
+);
 
-          // navigate('/dashboard');
-        } catch (error) {
-          // Handle error, e.g., show toast
-          toast({
-            title: "Login failed",
-            description: error instanceof Error ? error.message : "An unknown error occurred",
-            variant: "destructive",
-          });
-        }
-      },
-      [toast]
-    );
     const loginOrganization = useCallback(
-      async (login: AdminLoginFormData) => {
+      async (login: OrganizationRegisterFormData) => {
         try {
           const { data } = await api.post(endpoints.auth.loginOrganization, login, {
             withCredentials: true,
