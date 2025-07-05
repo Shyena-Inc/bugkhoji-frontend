@@ -99,7 +99,7 @@ export const endpoints = {
   },
 
   user: {
-    profile: (id:string)=>`user/getUserProfile/${id}`,
+    profile: '/api/user/profile',
     updateProfile: '/user/profile',
     uploadAvatar: '/user/avatar',
     getUserById: (id: string) => `/user/${id}`,

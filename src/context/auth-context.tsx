@@ -11,7 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContextType } from "@/types/context";
 import LoadingScreen from "@/components/Loading";
 import api, { endpoints } from "@/utils/api";
-import { AdminLoginFormData,ResearcherLoginFormData, OrganizationLoginFormData, ResearcherRegisterFormData,OrganizationRegisterFormData } from "@/types/auth";
+import { AdminLoginFormData, ResearcherLoginFormData, OrganizationLoginFormData, ResearcherRegisterFormData, OrganizationRegisterFormData } from "@/types/auth";
 import Cookies from "js-cookie";
 
 type Props = {
@@ -28,28 +28,11 @@ export function AuthProvider({ children }: Props) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
- 
-useEffect(() => {
-  console.log('=== AUTH PROVIDER DEBUG ===');
-  const storedUser = localStorage.getItem("currentUser");
-  console.log('Stored user from localStorage:', storedUser);
-  
-  if (storedUser && storedUser !== "undefined") {
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      console.log('Parsed user:', parsedUser);
-      setUser(parsedUser);
-    } catch (error) {
-      console.error('Error parsing stored user:', error);
-    }
-  } else {
-    console.log('No valid user found in localStorage');
-  }
-  
-  console.log('Auth loading set to false');
-  setLoading(false);
-}, []);
+
   useEffect(() => {
+    console.log('=== AUTH PROVIDER DEBUG ===');
+
+    // Check for user data from URL parameters first
     const userFromURL = searchParams.get("currentUser");
 
     if (userFromURL) {
@@ -57,20 +40,55 @@ useEffect(() => {
         const parsedUser = JSON.parse(userFromURL);
         setUser(parsedUser);
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
+
+        // Set authorization header if token exists
+        const token = Cookies.get("__accessToken_");
+        if (token) {
+          api.defaults.headers["Authorization"] = `Bearer ${token}`;
+        }
+
         toast({
           title: "Login Successful",
           variant: "success",
         });
         navigate("/problems", { replace: true });
+        setLoading(false);
+        return;
       } catch (error) {
-        console.error("Error parsing user data:", error);
+        console.error("Error parsing user data from URL:", error);
         toast({
           title: "Invalid user data",
           variant: "destructive",
         });
         navigate("/login");
+        setLoading(false);
+        return;
       }
     }
+
+    // If no URL user data, check localStorage
+    const storedUser = localStorage.getItem("currentUser");
+    console.log('Stored user from localStorage:', storedUser);
+
+    if (storedUser && storedUser !== "undefined") {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        console.log('Parsed user:', parsedUser);
+        setUser(parsedUser);
+
+        const token = Cookies.get("__accessToken_");
+        if (token) {
+          api.defaults.headers["Authorization"] = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    } else {
+      console.log('No valid user found in localStorage');
+    }
+
+    console.log('Auth loading set to false');
+    setLoading(false);
   }, [navigate, searchParams, toast]);
 
   const logout = useCallback(
@@ -124,58 +142,86 @@ useEffect(() => {
     }
   }, [logout]);
 
-  
 
-    const loginAdmin = useCallback(
-      async (login: AdminLoginFormData) => {
-        try {
-          const { data } = await api.post(endpoints.auth.loginAdmin, login, {
-            withCredentials: true,
-          });
 
-          const token = Cookies.get("__accessToken_");
+  const loginAdmin = useCallback(
+    async (login: AdminLoginFormData) => {
+      try {
+        const { data } = await api.post(endpoints.auth.loginAdmin, login, {
+          withCredentials: true,
+        });
 
-          setUser(data.data);
+        // Wait for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const token = Cookies.get("__accessToken_");
+
+        setUser(data.user);
+        if (token) {
           api.defaults.headers["Authorization"] = `Bearer ${token}`;
-          localStorage.setItem("currentUser", JSON.stringify(data.data));
-
-          // navigate('/dashboard');
-        } catch (error) {
-          // Handle error, e.g., show toast
-          toast({
-            title: "Login failed",
-            description: error instanceof Error ? error.message : "An unknown error occurred",
-            variant: "destructive",
-          });
         }
-      },
-      [toast]
-    );
+        localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-    // Add these debug logs to your loginResearcher function in auth-context.tsx
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+          variant: "default",
+        });
 
-const loginResearcher = useCallback(
+        navigate('/problems'); // Add navigation
+      } catch (error) {
+        toast({
+          title: "Login failed",
+          description: error?.response?.data?.message || error?.message || "An unknown error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, navigate]
+  );
+
+
+ const loginResearcher = useCallback(
   async (login: ResearcherLoginFormData) => {
     try {
       console.log('=== LOGIN RESEARCHER DEBUG ===');
-      console.log('Login data:', login);
+      console.log('1. Starting login with data:', login);
       
       const { data } = await api.post(endpoints.auth.loginResearcher, login, {
         withCredentials: true,
       });
       
-      console.log('Login API response:', data);
+      console.log('2. Login API response:', data);
+      console.log('3. Response headers:', data.headers);
+      
+      // Check cookies immediately
+      console.log('4. Cookies before delay:', {
+        accessToken: Cookies.get("__accessToken_"),
+        refreshToken: Cookies.get("__refreshToken_"),
+        refreshExpiry: Cookies.get("__refreshExpiry_")
+      });
+      
+      // Wait a bit for cookies to be set
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       const token = Cookies.get("__accessToken_");
-      console.log('Access token from cookies:', token);
+      console.log('5. Access token after delay:', token);
       
-      console.log('Setting user data:', data.data);
-      setUser(data.data);
+      if (!token) {
+        console.error('6. NO TOKEN FOUND! Check backend cookie settings');
+        console.log('7. All cookies:', document.cookie);
+      }
       
-      api.defaults.headers["Authorization"] = `Bearer ${token}`;
-      localStorage.setItem("currentUser", JSON.stringify(data.data));
+      console.log('8. Setting user data:', data.user);
+      setUser(data.user);
       
-      console.log('User set in localStorage:', localStorage.getItem("currentUser"));
+      if (token) {
+        api.defaults.headers["Authorization"] = `Bearer ${token}`;
+        console.log('9. Authorization header set');
+      }
+      
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      console.log('10. User stored in localStorage:', localStorage.getItem("currentUser"));
       
       toast({
         title: "Login successful",
@@ -183,13 +229,15 @@ const loginResearcher = useCallback(
         variant: "default",
       });
 
-      navigate('/dashboard');
+      console.log('11. Navigating to /researcher/dashboard');
+      navigate('/researcher/dashboard');
       
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('LOGIN ERROR:', error);
+      console.error('Error response:', error.response?.data);
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description: error?.response?.data?.message || error?.message || "An unknown error occurred",
         variant: "destructive",
       });
     }
@@ -197,75 +245,85 @@ const loginResearcher = useCallback(
   [toast, navigate] 
 );
 
-    const loginOrganization = useCallback(
-      async (login: OrganizationRegisterFormData) => {
-        try {
-          const { data } = await api.post(endpoints.auth.loginOrganization, login, {
-            withCredentials: true,
-          });
+  const loginOrganization = useCallback(
+    async (login: OrganizationLoginFormData) => {
+      try {
+        const { data } = await api.post(endpoints.auth.loginOrganization, login, {
+          withCredentials: true,
+        });
 
-          const token = Cookies.get("__accessToken_");
+        // Wait for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-          setUser(data.data);
+        const token = Cookies.get("__accessToken_");
+
+        setUser(data.user);
+        if (token) {
           api.defaults.headers["Authorization"] = `Bearer ${token}`;
-          localStorage.setItem("currentUser", JSON.stringify(data.data));
-
-          // navigate('/dashboard');
-        } catch (error) {
-          // Handle error, e.g., show toast
-          toast({
-            title: "Login failed",
-            description: error instanceof Error ? error.message : "An unknown error occurred",
-            variant: "destructive",
-          });
         }
-      },
-      [toast]
-    );
+        localStorage.setItem("currentUser", JSON.stringify(data.user));
 
- const registerResearcher = useCallback(
-  async (formData: ResearcherRegisterFormData) => {
-    try {
-      const { data } = await api.post(endpoints.auth.registerResearcher, formData, {
-        withCredentials: true,
-      });
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+          variant: "default",
+        });
 
-      const accessToken = Cookies.get("__accessToken_");
-      setUser(data.data);
-      api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
-      localStorage.setItem("currentUser", JSON.stringify(data.data));
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    }
-  },
-  [toast]
-);
+        navigate('/problems'); // Add navigation
+      } catch (error) {
+        toast({
+          title: "Login failed",
+          description: error?.response?.data?.message || error?.message || "An unknown error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, navigate]
+  );
 
-const registerOrganization = useCallback(
-  async (formData: OrganizationRegisterFormData) => {
-    try {
-      const { data } = await api.post(endpoints.auth.registerOrganization, formData, {
-        withCredentials: true,
-      });
+  const registerResearcher = useCallback(
+    async (formData: ResearcherRegisterFormData) => {
+      try {
+        const { data } = await api.post(endpoints.auth.registerResearcher, formData, {
+          withCredentials: true,
+        });
 
-      const accessToken = Cookies.get("__accessToken_");
-      setUser(data.data);
-      api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
-      localStorage.setItem("currentUser", JSON.stringify(data.data));
-    } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    }
-  },
-  [toast]
-);
+        const accessToken = Cookies.get("__accessToken_");
+        setUser(data.user);
+        api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
+        localStorage.setItem("currentUser", JSON.stringify(data.user));
+      } catch (error) {
+        toast({
+          title: "Registration failed",
+          description: error instanceof Error ? error.message : "An unknown error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
+  const registerOrganization = useCallback(
+    async (formData: OrganizationRegisterFormData) => {
+      try {
+        const { data } = await api.post(endpoints.auth.registerOrganization, formData, {
+          withCredentials: true,
+        });
+
+        const accessToken = Cookies.get("__accessToken_");
+        setUser(data.user);
+        api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
+        localStorage.setItem("currentUser", JSON.stringify(data.user));
+      } catch (error) {
+        toast({
+          title: "Registration failed",
+          description: error instanceof Error ? error.message : "An unknown error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   const editProfile = useCallback(async (data: UserI) => {
     setUser(data);

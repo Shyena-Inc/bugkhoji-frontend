@@ -24,7 +24,6 @@ interface UserProfile {
   }>;
 }
 
-// Type for the hook options
 type UseGetProfileOptions = Omit<UseQueryOptions<UserProfile>, 'queryKey' | 'queryFn'>;
 
 export function useGetProfile(id: string | undefined, options: UseGetProfileOptions = {}) {
@@ -35,7 +34,7 @@ export function useGetProfile(id: string | undefined, options: UseGetProfileOpti
                 throw new Error('User ID is required');
             }
             
-            const response = await api.get(endpoints.user.profile(id));
+            const response = await api.get(endpoints.user.profile);
             console.log('Profile data:', response.data);
             return response.data;
         },

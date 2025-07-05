@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { Eye, EyeOff, Loader2, Mail, Lock, AlertCircle, ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
+import { useAuth } from "../../context"
 
 interface ResearcherLoginFormData {
   email: string
@@ -20,25 +21,10 @@ interface ResearcherLoginFormData {
   rememberMe?: boolean
 }
 
-// Mock login function - replace with your actual service
-const loginResearcher = async (data: ResearcherLoginFormData) => {
-  // Simulate API call
-  await new Promise((resolve) => setTimeout(resolve, 2000))
-
-  // Simulate different responses for demo
-  if (data.email === "error@example.com") {
-    throw new Error("Invalid credentials")
-  }
-  if (data.email === "blocked@example.com") {
-    throw new Error("Account temporarily locked")
-  }
-
-  return { success: true, user: { email: data.email } }
-}
-
 export default function ResearcherLoginPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { loginResearcher } = useAuth() // Use your auth context
 
   const [formData, setFormData] = useState<ResearcherLoginFormData>({
     email: "",
@@ -81,32 +67,30 @@ export default function ResearcherLoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await loginResearcher(formData)
-
-      toast({
-        title: "Welcome back!",
-        description: "You have been successfully logged in.",
+      // Use your actual auth context function
+      await loginResearcher({
+        email: formData.email,
+        password: formData.password
       })
 
-      navigate("/researcher/dashboard")
+      // Note: Navigation is handled by your auth context
+      // No need to navigate here as loginResearcher will handle it
+      
     } catch (error) {
       console.error("Login error:", error)
 
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
 
-      if (errorMessage.includes("Invalid credentials")) {
+      if (errorMessage.includes("Invalid credentials") || errorMessage.includes("401")) {
         setGeneralError("Invalid email or password. Please check your credentials and try again.")
-      } else if (errorMessage.includes("locked")) {
+      } else if (errorMessage.includes("locked") || errorMessage.includes("429")) {
         setGeneralError("Your account has been temporarily locked. Please contact support or try again later.")
       } else {
         setGeneralError("Unable to sign in. Please check your connection and try again.")
       }
 
-      toast({
-        title: "Sign in failed",
-        description: errorMessage,
-        variant: "destructive",
-      })
+      // The auth context will handle its own toast, so we might not need this one
+      // But keeping it for additional user feedback
     } finally {
       setIsLoading(false)
     }
