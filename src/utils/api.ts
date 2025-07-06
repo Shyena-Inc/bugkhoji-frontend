@@ -93,7 +93,7 @@ export const endpoints = {
     registerResearcher: "/v1/register/researcher",
     registerOrganization: "/v1/register/organization",
     logout: '/auth/logout',
-    rotateToken: '/auth/rotateToken',
+    rotateToken: '/v1/refresh',
     verify: '/auth/verify',
     resendVerification: '/auth/resend-verification',
   },
@@ -134,7 +134,7 @@ export const endpoints = {
       addComment: (id: string) => `/researcher/reports/${id}/comments`,
     },
     programs: {
-      available: '/researcher/programs/available',
+      available: '/api/v1/researcher/programs',
       joined: '/researcher/programs/joined',
       join: (id: string) => `/researcher/programs/${id}/join`,
       leave: (id: string) => `/researcher/programs/${id}/leave`,

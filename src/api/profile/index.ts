@@ -1,6 +1,6 @@
 import api, { endpoints } from "@/utils/api";
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
-
+import Cookies from 'js-cookie';
 // Define the user profile type (adjust based on your actual data structure)
 interface UserProfile {
   id: string;
@@ -26,23 +26,24 @@ interface UserProfile {
 
 type UseGetProfileOptions = Omit<UseQueryOptions<UserProfile>, 'queryKey' | 'queryFn'>;
 
-export function useGetProfile(id: string | undefined, options: UseGetProfileOptions = {}) {
+export function useGetProfile(options: UseGetProfileOptions = {}) {
     return useQuery<UserProfile>({
-        queryKey: ['users', id],
+        queryKey: ['user-profile'],
         queryFn: async () => {
-            if (!id) {
-                throw new Error('User ID is required');
+            // Debug before making the call
+            const token = Cookies.get("__accessToken_");
+            console.log('🚀 Making API call with token:', token ? 'EXISTS' : 'MISSING');
+            
+            if (!token) {
+                throw new Error('No authentication token found in cookies');
             }
             
             const response = await api.get(endpoints.user.profile);
-            console.log('Profile data:', response.data);
-            return response.data;
+            console.log('✅ Profile response:', response.data);
+            return response.data.data;
         },
         retry: 1,
-        staleTime: 5 * 60 * 1000, // 5 minutes - profile data doesn't change frequently
-        // Don't run the query if no ID is provided
-        enabled: !!id,
-        // Allow additional options to be passed
+        staleTime: 5 * 60 * 1000,
         ...options
     });
 }

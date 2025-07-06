@@ -118,30 +118,33 @@ export function AuthProvider({ children }: Props) {
     [navigate, toast]
   );
 
-  const refreshAuthToken = useCallback(async () => {
-    const refreshToken = Cookies.get("__refreshToken_");
-    if (!refreshToken) return logout();
+  const refreshAuthToken = useCallback(async (): Promise<string> => {
+  const refreshToken = Cookies.get("__refreshToken_");
+  if (!refreshToken) {
+    await logout();
+    throw new Error("No refresh token found");
+  }
 
-    try {
-      await api.get("/auth/rotateToken", {
-        withCredentials: true,
-      });
+  try {
+    await api.get("/auth/rotateToken", {
+      withCredentials: true,
+    });
 
-      const accessToken = Cookies.get("__accessToken_");
+    const accessToken = Cookies.get("__accessToken_");
 
-      if (!accessToken) {
-        throw new Error("Failed to fetch new access token.");
-      }
-
-      // localStorage.setItem("authToken", data.accessToken);
-      api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
-      return accessToken;
-    } catch (err) {
-      console.error("Failed to refresh token", err);
-      logout();
+    if (!accessToken) {
+      throw new Error("Failed to fetch new access token.");
     }
-  }, [logout]);
 
+    api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
+    return accessToken;
+  } catch (err) {
+    console.error("Failed to refresh token", err);
+    await logout();
+    throw new Error("Token refresh failed");
+  }
+}, [logout]);
+  
 
 
   const loginAdmin = useCallback(

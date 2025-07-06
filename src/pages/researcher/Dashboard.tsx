@@ -19,9 +19,8 @@ const ResearcherDashboard = () => {
   
   // Only call the query if we have a user ID
   const { data: userProfile, isLoading, error } = useGetProfile(
-    userId ? userId.toString() : "", // Safe conversion to string
     {
-      enabled: !!userId, // Only run query if userId exists
+      enabled: !!userId, 
     }
   );
 
