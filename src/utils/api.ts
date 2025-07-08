@@ -33,7 +33,7 @@ api.interceptors.response.use(
 
       const accessToken = Cookies.get("__accessToken_");
 
-      if (accessToken !== undefined) {
+        if (!accessToken) {
         if (logoutCallback) {
           logoutCallback();
           localStorage.clear();
@@ -52,8 +52,8 @@ api.interceptors.response.use(
 
         api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
-
         return api(originalRequest);
+
       } catch (refreshError) {
         console.error('Token refresh failed', refreshError);
         Cookies.remove("__accessToken_");
