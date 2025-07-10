@@ -170,9 +170,9 @@ const About = () => {
             </div>
             
             <div>
-              <h3 className="font-semibold mb-4">Social</h3>
+              <h3 className="font-semibold mb-4">Socials</h3>
               <ul className="space-y-2 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">X</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">LinkedIn</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">GitHub</a></li>
               </ul>
@@ -180,7 +180,7 @@ const About = () => {
           </div>
           
           <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-            <p>&copy; 2024 BugKhoji🔍. All rights reserved.</p>
+            <p>&copy; 2025 BugKhoji🔍. All Rights Reserved.</p>
           </div>
         </div>
       </footer>

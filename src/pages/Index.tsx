@@ -197,8 +197,8 @@ const Index = () => {
             </div>
             
             <div>
-              <h3 className="font-semibold mb-4 text-cyan-400">Platform</h3>
-              <ul className="space-y-3 text-slate-400">
+              <h3 className="font-bold mb-4 text-cyan-400">Platform</h3>
+              <ul className ="space-y-3 text-slate-400">
                 <li><Link to="/about" className="hover:text-cyan-400 transition-colors">About</Link></li>
                 <li><Link to="/careers" className="hover:text-cyan-400 transition-colors">Careers</Link></li>
                 <li><Link to="/contact" className="hover:text-cyan-400 transition-colors">Contact</Link></li>
@@ -215,9 +215,9 @@ const Index = () => {
             </div>
             
             <div>
-              <h3 className="font-semibold mb-4 text-cyan-400">Social</h3>
+              <h3 className="font-semibold mb-4 text-cyan-400">Socials</h3>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="#" className="hover:text-cyan-400 transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-cyan-400 transition-colors">X</a></li>
                 <li><a href="#" className="hover:text-cyan-400 transition-colors">LinkedIn</a></li>
                 <li><a href="#" className="hover:text-cyan-400 transition-colors">GitHub</a></li>
               </ul>
@@ -225,7 +225,7 @@ const Index = () => {
           </div>
           
           <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-            <p>&copy; 2024 BugKhoji🔍. All rights reserved.</p>
+            <p>&copy; 2025 BugKhoji🔍. All rights reserved.</p>
           </div>
         </div>
       </footer>
