@@ -14,7 +14,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(config => {
-  const token = Cookies.get("__accessToken_");
+  const token = Cookies.get("accessToken");
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
@@ -31,7 +31,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const accessToken = Cookies.get("__accessToken_");
+      const accessToken = Cookies.get("accessToken");
 
         if (!accessToken) {
         if (logoutCallback) {
@@ -44,7 +44,7 @@ api.interceptors.response.use(
       try {
         await api.post(`${API_URL}${endpoints.auth.rotateToken}`, { withCredentials: true });
 
-        const newAccessToken = Cookies.get("__accessToken_");
+        const newAccessToken = Cookies.get("accessToken");
 
         if (!newAccessToken) {
           throw new Error("Failed to refresh access token");

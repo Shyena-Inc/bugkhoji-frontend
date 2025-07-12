@@ -4,9 +4,9 @@ import api, { endpoints } from '@/utils/api';
 
 export function useGetAllOrganizers(page: number) {
     return useQuery({
-        queryKey: ['problems', page],
+        queryKey: ['organizers', page],
         queryFn: async () => {
-            const response = await api.get(endpoints.researcher.reports.all(page), {
+            const response = await api.get(endpoints.researcher.programs.available, {
                 withCredentials: true,
             });
 
