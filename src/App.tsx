@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,31 +34,37 @@ const App = () => (
       <Toaster />
       <Sonner />
 
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/careers" element={<Careers />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/register/researcher" element={<ResearcherRegisterPage />} />
-          <Route path="/login/researcher" element={<ResearcherLoginPage />} />
-          <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
-          <Route path="/researcher/programs" element={<Programs />} />
-          <Route path="/researcher/reports" element={<Reports />} />
-          <Route path="/researcher/submit" element={<SubmitReport />} />
-          <Route path="/researcher/payments" element={<Payments />} />
-          <Route path="/researcher/leaderboard" element={<Leaderboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/manage-users" element={<ManageUsers />} />
-          <Route path="/admin/manage-programs" element={<ManagePrograms />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
-          <Route path="/admin/support" element={<AdminSupport />} />
-          <Route path="/admin/site-settings" element={<SiteSettings />} />
-          <Route path="/register/organization" element={<OrganizationRegisterPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/support" element={<Support />} />
+        <Route
+          path="/register/researcher"
+          element={<ResearcherRegisterPage />}
+        />
+        <Route path="/login/researcher" element={<ResearcherLoginPage />} />
+        <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
+        <Route path="/researcher/programs" element={<Programs />} />
+        <Route path="/researcher/reports" element={<Reports />} />
+        <Route path="/researcher/submit" element={<SubmitReport />} />
+        <Route path="/researcher/payments" element={<Payments />} />
+        <Route path="/researcher/leaderboard" element={<Leaderboard />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/manage-users" element={<ManageUsers />} />
+        <Route path="/admin/manage-programs" element={<ManagePrograms />} />
+        <Route path="/admin/reports" element={<AdminReports />} />
+        <Route path="/admin/support" element={<AdminSupport />} />
+        <Route path="/admin/site-settings" element={<SiteSettings />} />
+        <Route
+          path="/register/organization"
+          element={<OrganizationRegisterPage />}
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </TooltipProvider>
   </Provider>
 );

@@ -97,7 +97,10 @@ const Contact = () => {
                           Email
                         </h3>
                         <p className="text-slate-600 dark:text-slate-300">
-                          info@bugkhoji.com
+                          {" "}
+                          <a href="mailto:info@bugkhiji.com">
+                            info@bugkhoji.com
+                          </a>
                         </p>
                       </div>
                     </div>
@@ -233,28 +236,29 @@ const Contact = () => {
       </section>
 
       {/* Footer */}
-     <footer className="relative bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-xl text-white py-16 px-4 border-t border-white/10">
-             <div className="max-w-7xl mx-auto">
-               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                 <div>
-                   <div className="flex items-center mb-6">
-                     <div className="relative">
-                       <Shield className="h-8 w-8 text-cyan-400 mr-3" />
-                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse"></div>
-                     </div>
-                     <span className="text-[25px] font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                       BugKhoji🔍
-                     </span>
-                   </div>
-                   <p className="text-slate-400 leading-relaxed text-[17px]">
-                     Connecting ethical hackers with organizations for a safer digital world.
-                   </p>
-                 </div>
-                 
-                 <div>
-                   <h3 className="font-bold mb-4 text-cyan-400">Platform</h3>
-                   <ul className ="space-y-3 text-slate-400">
-                     <li>
+      <footer className="relative bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-xl text-white py-16 px-4 border-t border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center mb-6">
+                <div className="relative">
+                  <Shield className="h-8 w-8 text-cyan-400 mr-3" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse"></div>
+                </div>
+                <span className="text-[25px] font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  BugKhoji🔍
+                </span>
+              </div>
+              <p className="text-slate-400 leading-relaxed text-[17px]">
+                Connecting ethical hackers with organizations for a safer
+                digital world.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-bold mb-4 text-cyan-400">Platform</h3>
+              <ul className="space-y-3 text-slate-400">
+                <li>
                   <a href="/" className="hover:text-white transition-colors">
                     Home
                   </a>
@@ -275,33 +279,66 @@ const Contact = () => {
                     Contact Us
                   </a>
                 </li>
-                   </ul>
-                 </div>
-                 
-                 <div>
-                   <h3 className="font-semibold mb-4 text-cyan-400">Legal</h3>
-                   <ul className="space-y-3 text-slate-400">
-                     <li><a href="/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</a></li>
-                     <li><a href="/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</a></li>
-                     <li><a href="/support" className="hover:text-cyan-400 transition-colors">Support</a></li>
-                   </ul>
-                 </div>
-                 
-                 <div>
-                   <h3 className="font-semibold mb-4 text-cyan-400">Socials</h3>
-                   <ul className="space-y-3 text-slate-400">
-                     <li><a href="#" className="hover:text-cyan-400 transition-colors">X</a></li>
-                     <li><a href="#" className="hover:text-cyan-400 transition-colors">LinkedIn</a></li>
-                     <li><a href="#" className="hover:text-cyan-400 transition-colors">GitHub</a></li>
-                   </ul>
-                 </div>
-               </div>
-               
-               <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400 text-[17px]">
-                 <p>&copy; 2025 BugKhoji🔍. All rights reserved.</p>
-               </div>
-             </div>
-           </footer>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4 text-cyan-400">Legal</h3>
+              <ul className="space-y-3 text-slate-400">
+                <li>
+                  <a
+                    href="/terms"
+                    className="hover:text-cyan-400 transition-colors"
+                  >
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/privacy"
+                    className="hover:text-cyan-400 transition-colors"
+                  >
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/support"
+                    className="hover:text-cyan-400 transition-colors"
+                  >
+                    Support
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4 text-cyan-400">Socials</h3>
+              <ul className="space-y-3 text-slate-400">
+                <li>
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
+                    X
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
+                    LinkedIn
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
+                    GitHub
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400 text-[17px]">
+            <p>&copy; 2025 BugKhoji🔍. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
