@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -27,7 +26,8 @@ import ResearcherRegisterPage from "./pages/register/reseacherSignup";
 import OrganizationRegisterPage from "./pages/register/organizationSignup";
 import ResearcherLoginPage from "./pages/login/ResearcherLogin";
 import Provider from "./Providers";
-
+import AuthGuard from "./guards/AuthGuard";
+import LoginGuard from "./guards/LoginGuard";
 const App = () => (
   <Provider>
     <TooltipProvider>
@@ -42,11 +42,16 @@ const App = () => (
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/support" element={<Support />} />
-        <Route
-          path="/register/researcher"
-          element={<ResearcherRegisterPage />}
-        />
+
+        <Route element={<LoginGuard />}>
+        <Route path="/register/researcher" element={<ResearcherRegisterPage />} />
         <Route path="/login/researcher" element={<ResearcherLoginPage />} />
+        <Route path="/register/organization"  element={<OrganizationRegisterPage />}  />  
+        </Route>
+
+        <Route element={<AuthGuard />}>
+
+
         <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
         <Route path="/researcher/programs" element={<Programs />} />
         <Route path="/researcher/reports" element={<Reports />} />
@@ -59,10 +64,7 @@ const App = () => (
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/support" element={<AdminSupport />} />
         <Route path="/admin/site-settings" element={<SiteSettings />} />
-        <Route
-          path="/register/organization"
-          element={<OrganizationRegisterPage />}
-        />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>

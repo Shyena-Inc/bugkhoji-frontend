@@ -171,7 +171,7 @@ export function AuthProvider({ children }: Props) {
           variant: "default",
         });
 
-        navigate('/problems'); // Add navigation
+        navigate('/dashboard'); 
       } catch (error) {
         toast({
           title: "Login failed",
@@ -272,7 +272,7 @@ export function AuthProvider({ children }: Props) {
           variant: "default",
         });
 
-        navigate('/problems'); // Add navigation
+        navigate('/organizer/dashboard');
       } catch (error) {
         toast({
           title: "Login failed",

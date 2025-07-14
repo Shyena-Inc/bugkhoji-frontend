@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { FileText, Search, Filter, Eye, Edit, Trash2, Calendar, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,99 +7,117 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ResearcherLayout from '@/components/ResearcherLayout';
+import { useGetAllReports } from '@/api/reports';
+import { useAuth } from '../../context/index';
 
 const Reports = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [severityFilter, setSeverityFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
 
-  const reports = [
-    {
-      id: 'REP-2024-001',
-      title: 'SQL Injection in User Search',
-      program: 'TechCorp Security Program',
-      severity: 'high',
-      status: 'resolved',
-      submittedDate: '2024-01-10',
-      resolvedDate: '2024-01-15',
-      bounty: 6200
-    },
-    {
-      id: 'REP-2024-002',
-      title: 'XSS in Comment System',
-      program: 'FinanceApp Bug Bounty',
-      severity: 'medium',
-      status: 'triaged',
-      submittedDate: '2024-01-08',
-      resolvedDate: null,
-      bounty: 1500
-    },
-    {
-      id: 'REP-2024-003',
-      title: 'CSRF on Password Reset',
-      program: 'E-commerce Platform',
-      severity: 'medium',
-      status: 'open',
-      submittedDate: '2024-01-05',
-      resolvedDate: null,
-      bounty: null
-    },
-    {
-      id: 'REP-2023-045',
-      title: 'Authentication Bypass',
-      program: 'TechCorp Security Program',
-      severity: 'critical',
-      status: 'resolved',
-      submittedDate: '2023-12-20',
-      resolvedDate: '2023-12-28',
-      bounty: 12000
-    },
-    {
-      id: 'REP-2023-044',
-      title: 'Information Disclosure',
-      program: 'FinanceApp Bug Bounty',
-      severity: 'low',
-      status: 'rejected',
-      submittedDate: '2023-12-15',
-      resolvedDate: '2023-12-18',
-      bounty: null
-    }
-  ];
+  const isResearcher = user?.role === 'RESEARCHER';
+  
+  const { data: reports = [], isLoading, error } = useGetAllReports(
+    !!user?.id && isResearcher ? 1 : 0
+  );
 
-  const getStatusBadge = (status: string) => {
+  // Debug logging
+  console.log('User from auth:', user);
+  console.log('Is researcher:', isResearcher);
+  console.log('Reports data:', reports);
+  console.log('Loading state:', isLoading);
+  console.log('Error:', error);
+
+  const getStatusBadge = (status) => {
     const variants = {
-      open: 'bg-blue-100 text-blue-800',
-      triaged: 'bg-yellow-100 text-yellow-800',
-      resolved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800'
+      DRAFT: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
+      SUBMITTED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+      UNDER_REVIEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+      TRIAGED: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+      RESOLVED: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+      CLOSED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
     };
-    return variants[status as keyof typeof variants] || variants.open;
+    return variants[status] || variants.DRAFT;
   };
 
-  const getSeverityBadge = (severity: string) => {
+  const getPriorityBadge = (priority) => {
     const variants = {
-      critical: 'bg-red-500 text-white',
-      high: 'bg-orange-500 text-white',
-      medium: 'bg-yellow-500 text-white',
-      low: 'bg-green-500 text-white'
+      CRITICAL: 'bg-red-500 text-white',
+      HIGH: 'bg-orange-500 text-white',
+      MEDIUM: 'bg-yellow-500 text-white',
+      LOW: 'bg-green-500 text-white'
     };
-    return variants[severity as keyof typeof variants] || variants.low;
+    return variants[priority] || variants.LOW;
+  };
+
+  const formatStatus = (status) => {
+    return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatPriority = (priority) => {
+    return priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase();
   };
 
   const filteredReports = reports.filter(report => {
     const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.program.toLowerCase().includes(searchTerm.toLowerCase());
+                         (report.description && report.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (report.tags && report.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    const matchesSeverity = severityFilter === 'all' || report.severity === severityFilter;
-    return matchesSearch && matchesStatus && matchesSeverity;
+    const matchesPriority = priorityFilter === 'all' || report.priority === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
+  // Calculate stats from actual data
   const stats = {
     total: reports.length,
-    resolved: reports.filter(r => r.status === 'resolved').length,
-    pending: reports.filter(r => r.status === 'open' || r.status === 'triaged').length,
-    totalEarnings: reports.filter(r => r.bounty).reduce((sum, r) => sum + (r.bounty || 0), 0)
+    resolved: reports.filter(r => r.status === 'RESOLVED').length,
+    pending: reports.filter(r => ['SUBMITTED', 'UNDER_REVIEW', 'TRIAGED'].includes(r.status)).length,
+    draft: reports.filter(r => r.status === 'DRAFT').length
   };
+
+  // Loading state - also check if user is not fully loaded
+  if (!user || isLoading) {
+    return (
+      <ResearcherLayout>
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="animate-pulse">
+            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4 mb-2"></div>
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array(4).fill(null).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-slate-200 dark:bg-slate-700 rounded-lg h-24"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </ResearcherLayout>
+    );
+  }
+
+  // Error state
+  if (error || !isResearcher) {
+    return (
+      <ResearcherLayout>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-8">
+            <h2 className="text-xl font-semibold text-red-600 dark:text-red-400">
+              {!isResearcher ? 'Access Denied' : 'Error loading reports'}
+            </h2>
+            <p className="text-slate-600 dark:text-slate-300 mt-2">
+              {!isResearcher 
+                ? 'This page is only accessible to researchers.' 
+                : error?.message || 'Something went wrong. Please try again.'
+              }
+            </p>
+          </div>
+        </div>
+      </ResearcherLayout>
+    );
+  }
 
   return (
     <ResearcherLayout>
@@ -146,11 +163,11 @@ const Reports = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-              <div className="text-green-500">$</div>
+              <CardTitle className="text-sm font-medium">Draft</CardTitle>
+              <Edit className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.totalEarnings.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
             </CardContent>
           </Card>
         </div>
@@ -173,23 +190,26 @@ const Reports = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="triaged">Triaged</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="SUBMITTED">Submitted</SelectItem>
+              <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
+              <SelectItem value="TRIAGED">Triaged</SelectItem>
+              <SelectItem value="RESOLVED">Resolved</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+              <SelectItem value="CLOSED">Closed</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={severityFilter} onValueChange={setSeverityFilter}>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
             <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="Filter by severity" />
+              <SelectValue placeholder="Filter by priority" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Severity</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="all">All Priority</SelectItem>
+              <SelectItem value="CRITICAL">Critical</SelectItem>
+              <SelectItem value="HIGH">High</SelectItem>
+              <SelectItem value="MEDIUM">Medium</SelectItem>
+              <SelectItem value="LOW">Low</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -203,53 +223,77 @@ const Reports = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Report ID</TableHead>
                   <TableHead>Title</TableHead>
-                  <TableHead>Program</TableHead>
-                  <TableHead>Severity</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Bounty</TableHead>
+                  <TableHead>Public</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredReports.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell className="font-medium">{report.id}</TableCell>
-                    <TableCell className="max-w-48 truncate">{report.title}</TableCell>
-                    <TableCell className="max-w-32 truncate">{report.program}</TableCell>
+                    <TableCell className="font-medium max-w-48">
+                      <div className="truncate" title={report.title}>
+                        {report.title}
+                      </div>
+                    </TableCell>
                     <TableCell>
-                      <Badge className={getSeverityBadge(report.severity)}>
-                        {report.severity}
+                      <span className="text-sm text-slate-600 dark:text-slate-300">
+                        {report.type || 'GENERAL'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getPriorityBadge(report.priority)}>
+                        {formatPriority(report.priority)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusBadge(report.status)}>
-                        {report.status}
+                        {formatStatus(report.status)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(report.submittedDate).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      {report.bounty ? (
-                        <span className="font-medium text-green-600">
-                          ${report.bounty.toLocaleString()}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
+                      <span className={`text-sm ${report.isPublic ? 'text-green-600' : 'text-red-600'}`}>
+                        {report.isPublic ? 'Yes' : 'No'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-32">
+                        {report.tags && report.tags.length > 0 ? (
+                          report.tags.slice(0, 2).map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-slate-400 text-sm">-</span>
+                        )}
+                        {report.tags && report.tags.length > 2 && (
+                          <span className="text-xs text-slate-500">+{report.tags.length - 2}</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {report.createdAt 
+                        ? new Date(report.createdAt).toLocaleDateString()
+                        : 'N/A'
+                      }
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" title="View Report">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {report.status === 'open' && (
+                        {report.status === 'DRAFT' && (
                           <>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" title="Edit Report">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" title="Delete Report">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
@@ -266,9 +310,14 @@ const Reports = () => {
         {filteredReports.length === 0 && (
           <div className="text-center py-12">
             <FileText className="mx-auto h-12 w-12 text-slate-400" />
-            <h3 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">No reports found</h3>
+            <h3 className="mt-4 text-lg font-medium text-slate-900 dark:text-white">
+              {reports.length === 0 ? 'No reports yet' : 'No reports found'}
+            </h3>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Try adjusting your search terms or filters.
+              {reports.length === 0 
+                ? 'Start by creating your first vulnerability report.'
+                : 'Try adjusting your search terms or filters.'
+              }
             </p>
           </div>
         )}

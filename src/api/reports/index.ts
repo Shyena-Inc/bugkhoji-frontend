@@ -6,7 +6,7 @@ export function useGetAllReports(page: number) {
     return useQuery({
         queryKey: ['programs', page],
         queryFn: async () => {
-            const response = await api.get(endpoints.researcher.reports.all(page), {
+            const response = await api.get(endpoints.researcher.reports.all, {
                 withCredentials: true,
             });
 
