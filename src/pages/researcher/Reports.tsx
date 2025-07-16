@@ -18,14 +18,21 @@ const Reports = () => {
 
   const isResearcher = user?.role === 'RESEARCHER';
   
-  const { data: reports = [], isLoading, error } = useGetAllReports(
+  const { data: reportsData, isLoading, error } = useGetAllReports(
     !!user?.id && isResearcher ? 1 : 0
   );
+
+  // Ensure reports is always an array
+  const reports = Array.isArray(reportsData) ? reportsData : 
+                 (reportsData?.data && Array.isArray(reportsData.data)) ? reportsData.data :
+                 (reportsData?.reports && Array.isArray(reportsData.reports)) ? reportsData.reports :
+                 [];
 
   // Debug logging
   console.log('User from auth:', user);
   console.log('Is researcher:', isResearcher);
-  console.log('Reports data:', reports);
+  console.log('Raw reports data:', reportsData);
+  console.log('Processed reports array:', reports);
   console.log('Loading state:', isLoading);
   console.log('Error:', error);
 
@@ -61,9 +68,9 @@ const Reports = () => {
   };
 
   const filteredReports = reports.filter(report => {
-    const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (report.description && report.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (report.tags && report.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+                         (report.tags && Array.isArray(report.tags) && report.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || report.priority === priorityFilter;
     return matchesSearch && matchesStatus && matchesPriority;
@@ -263,7 +270,7 @@ const Reports = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1 max-w-32">
-                        {report.tags && report.tags.length > 0 ? (
+                        {report.tags && Array.isArray(report.tags) && report.tags.length > 0 ? (
                           report.tags.slice(0, 2).map((tag, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
                               {tag}
@@ -272,7 +279,7 @@ const Reports = () => {
                         ) : (
                           <span className="text-slate-400 text-sm">-</span>
                         )}
-                        {report.tags && report.tags.length > 2 && (
+                        {report.tags && Array.isArray(report.tags) && report.tags.length > 2 && (
                           <span className="text-xs text-slate-500">+{report.tags.length - 2}</span>
                         )}
                       </div>

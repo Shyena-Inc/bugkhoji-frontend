@@ -13,16 +13,6 @@ const api = axios.create({
   withCredentials: true
 });
 
-api.interceptors.request.use(config => {
-  const token = Cookies.get("accessToken");
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
-
 api.interceptors.response.use(
   response => response,
   async error => {
@@ -31,9 +21,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const accessToken = Cookies.get("accessToken");
+      const refreshToken = Cookies.get("refreshToken");
 
-        if (!accessToken) {
+      
+      if (!refreshToken) {
         if (logoutCallback) {
           logoutCallback();
           localStorage.clear();
@@ -42,32 +33,34 @@ api.interceptors.response.use(
       }
 
       try {
-        await api.post(`${API_URL}${endpoints.auth.rotateToken}`, { withCredentials: true });
+        const response = await api.post(
+          `${API_URL}${endpoints.auth.rotateToken}`, 
+          {}, 
+          { withCredentials: true }
+        );
 
-        const newAccessToken = Cookies.get("accessToken");
+        const newAccessToken = response.data.token || Cookies.get("accessToken");
 
         if (!newAccessToken) {
           throw new Error("Failed to refresh access token");
         }
 
+        // Update headers and retry original request
         api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return api(originalRequest);
 
       } catch (refreshError) {
         console.error('Token refresh failed', refreshError);
-        Cookies.remove("__accessToken_");
-        Cookies.remove("__refreshToken_");
+        // Use consistent cookie names
+        Cookies.remove("accessToken");
+        Cookies.remove("refreshToken");
+        
         if (logoutCallback) {
           logoutCallback();
           localStorage.clear();
         }
         return Promise.reject(refreshError);
-      }
-    } else if (error.response && error.response.status === 401) {
-      if (logoutCallback) {
-        logoutCallback();
-        localStorage.clear();
       }
     }
 
