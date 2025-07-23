@@ -21,7 +21,7 @@ export function useGetAProgram(id: string) {
     return useQuery({
         queryKey: ['program', id],
         queryFn: async () => {
-            const response = await api.get(endpoints.researcher.programs.join(id), {
+            const response = await api.get(endpoints.researcher.programs.just(id), {
                 withCredentials: true,
             });
             return response.data;

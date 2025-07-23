@@ -131,6 +131,7 @@ export const endpoints = {
     },
     programs: {
       available: '/api/v1/researcher/programs',
+      just:(id: string) => `/api/v1/researcher/programs/${id}`,
       joined: '/researcher/programs/joined',
       join: (id: string) => `/researcher/programs/${id}/join`,
       leave: (id: string) => `/researcher/programs/${id}/leave`,

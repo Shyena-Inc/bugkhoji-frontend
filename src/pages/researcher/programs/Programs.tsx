@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ResearcherLayout from '@/components/ResearcherLayout';
 import { useGetAllPrograms } from '@/api/programs';
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "../../context/index";
+import { useAuth } from "../../../context/index";
+import { Link } from 'react-router-dom';
 
 const Programs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,7 +51,7 @@ const Programs = () => {
     if (rewards.medium) amounts.push(extractAmount(rewards.medium));
     if (rewards.high) amounts.push(extractAmount(rewards.high));
     if (rewards.critical) amounts.push(extractAmount(rewards.critical));
-    
+  
     return {
       min: Math.min(...amounts) || 0,
       max: Math.max(...amounts) || 0
@@ -255,14 +256,14 @@ const Programs = () => {
                       </div>
                     </div>
                   )}
-                  
+    
                   <div className="flex space-x-2 pt-2">
-                    <Button 
-                      className="flex-1" 
-                    >
-                      <Shield className="mr-2 h-4 w-4" />
-                      Join Program
-                    </Button>
+                    <Link to={`/researcher/programs/${program.id}`} className="flex-1">
+                      <Button className="w-full">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Join Program
+                      </Button>
+                    </Link>
                     <Button variant="outline" size="sm">
                       <ExternalLink className="h-4 w-4" />
                     </Button>
