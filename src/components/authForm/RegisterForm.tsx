@@ -663,7 +663,7 @@ export default function RegisterForm({ onSubmit, role = "RESEARCHER", showTitle 
             <button
               type="button"
               className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/login/researcher")}
             >
               Sign in here
             </button>

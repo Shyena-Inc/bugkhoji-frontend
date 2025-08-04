@@ -296,11 +296,20 @@ export function AuthProvider({ children }: Props) {
         api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
         localStorage.setItem("currentUser", JSON.stringify(data.user));
       } catch (error) {
+        console.error('=== REGISTRATION ERROR DEBUG ===');
+        console.error('Full error object:', error);
+        console.error('Error response data:', error?.response?.data);
+        console.error('Error response status:', error?.response?.status);
+        console.error('Error response headers:', error?.response?.headers);
+        console.error('Error message:', error?.message);
+        console.error('===================================');
+        
         toast({
           title: "Registration failed",
-          description: error instanceof Error ? error.message : "An unknown error occurred",
+          description: error?.response?.data?.error || error?.response?.data?.message || error?.message || "An unknown error occurred",
           variant: "destructive",
         });
+        throw error; // Re-throw so the form component can handle it
       }
     },
     [toast]
@@ -318,11 +327,20 @@ export function AuthProvider({ children }: Props) {
         api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
         localStorage.setItem("currentUser", JSON.stringify(data.user));
       } catch (error) {
+        console.error('=== ORGANIZATION REGISTRATION ERROR DEBUG ===');
+        console.error('Full error object:', error);
+        console.error('Error response data:', error?.response?.data);
+        console.error('Error response status:', error?.response?.status);
+        console.error('Error response headers:', error?.response?.headers);
+        console.error('Error message:', error?.message);
+        console.error('===================================');
+        
         toast({
           title: "Registration failed",
-          description: error instanceof Error ? error.message : "An unknown error occurred",
+          description: error?.response?.data?.error || error?.response?.data?.message || error?.message || "An unknown error occurred",
           variant: "destructive",
         });
+        throw error; // Re-throw so the form component can handle it
       }
     },
     [toast]

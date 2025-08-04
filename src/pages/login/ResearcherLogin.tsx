@@ -253,7 +253,7 @@ export default function ResearcherLoginPage() {
           <p className="text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Button variant="link" className="px-0 h-auto text-sm font-medium" asChild>
-              <Link to="/researcher/register">Create an account</Link>
+              <Link to="/register/researcher">Create an account</Link>
             </Button>
           </p>
         </div>

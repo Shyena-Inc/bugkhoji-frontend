@@ -12,14 +12,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context";
 import { useParams } from "react-router-dom";
-import { UserRole } from "@/types/user";
+import api, { endpoints } from '@/utils/api'
 
 const Navbar = () => {
   const [isDark, setIsDark] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { authenticated, user, logout } = useAuth();
-  const onHandleSubmit = () => {
-    logout();
+  
+  const onHandleSubmit = async () => {
+    try {
+      await api.post(endpoints.auth.logout);
+      logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
   const { id } = useParams();
 
@@ -177,7 +183,7 @@ const Navbar = () => {
                     <Link to={`/getUserProfile/${id}`}>Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link to={user?.role === "ORGANIZATION" ? "/org-dashboard" : "/dashboard"}>
+                    <Link to={user?.role === "ORGANIZATION" ? "/organization/dashboard" : "/researcher/dashboard"}>
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
