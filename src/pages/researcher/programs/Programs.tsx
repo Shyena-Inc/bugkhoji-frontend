@@ -31,7 +31,7 @@ const Programs = () => {
 
   const handleNextPage = () => {
     // Fix: Use correct data structure and pagination logic
-    if (data && data.programs && page < Math.ceil(data.programs.length / 8)) {
+    if (data && Array.isArray(data) && page < Math.ceil(data.length / 8)) {
       setPage(page + 1);
     }
   };
@@ -123,13 +123,13 @@ const Programs = () => {
   }
 
   // Filter programs based on search and status
-  const filteredPrograms = data?.programs?.filter(program => {
+  const filteredPrograms = (Array.isArray(data) ? data : []).filter(program => {
     const matchesSearch = program.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          program.organization.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          program.websiteName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || program.status.toLowerCase() === filterStatus;
     return matchesSearch && matchesFilter;
-  }) || [];
+  });
 
   return (
     <ResearcherLayout>
@@ -176,7 +176,22 @@ const Programs = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="text-3xl">🏢</div>
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        {program.logo ? (
+                          <img 
+                            src={program.logo} 
+                            alt={`${program.title} logo`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className={`text-2xl ${program.logo ? 'hidden' : 'flex'} items-center justify-center w-full h-full`}>
+                          🏢
+                        </div>
+                      </div>
                       <div>
                         <CardTitle className="text-lg">{program.title}</CardTitle>
                         <p className="text-sm text-slate-600 dark:text-slate-400">{program.organization.name}</p>
@@ -275,7 +290,7 @@ const Programs = () => {
         </div>
 
         {/* Pagination */}
-        {data?.programs && data.programs.length > 8 && (
+        {Array.isArray(data) && data.length > 8 && (
           <div className="flex justify-center space-x-2">
             <Button 
               variant="outline" 
@@ -285,12 +300,12 @@ const Programs = () => {
               Previous
             </Button>
             <span className="flex items-center px-4 py-2 text-sm text-slate-600">
-              Page {page} of {Math.ceil(data.programs.length / 8)}
+              Page {page} of {Math.ceil(data.length / 8)}
             </span>
             <Button 
               variant="outline" 
               onClick={handleNextPage}
-              disabled={page >= Math.ceil(data.programs.length / 8)}
+              disabled={page >= Math.ceil(data.length / 8)}
             >
               Next
             </Button>

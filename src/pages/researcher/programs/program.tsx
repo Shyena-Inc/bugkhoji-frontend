@@ -194,7 +194,22 @@ console.log(program)
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
-                <div className="text-4xl">🏢</div>
+                <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                  {program.logo ? (
+                    <img 
+                      src={program.logo} 
+                      alt={`${program.title} logo`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`text-3xl ${program.logo ? 'hidden' : 'flex'} items-center justify-center w-full h-full`}>
+                    🏢
+                  </div>
+                </div>
                 <div>
                   <CardTitle className="text-2xl text-black\">{program.title}</CardTitle>
                   <div className="flex items-center gap-2 mt-2">

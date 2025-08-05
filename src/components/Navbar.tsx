@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context";
 import { useParams } from "react-router-dom";
-import api, { endpoints } from '@/utils/api'
 
 const Navbar = () => {
   const [isDark, setIsDark] = useState(false);
@@ -21,7 +20,6 @@ const Navbar = () => {
   
   const onHandleSubmit = async () => {
     try {
-      await api.post(endpoints.auth.logout);
       logout();
     } catch (error) {
       console.error('Logout failed:', error);

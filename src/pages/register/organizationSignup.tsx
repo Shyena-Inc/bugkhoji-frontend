@@ -62,21 +62,29 @@ interface OrganizationRegisterFormData {
   role: "ORGANIZATION"
 }
 
-// Mock registration function - replace with your actual service
+// Replace the mock registration function with actual API call
 const registerOrganization = async (data: OrganizationRegisterFormData) => {
-  // Simulate API call
-  await new Promise((resolve) => setTimeout(resolve, 3000))
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
 
-  // Simulate different responses for demo
-  if (data.email === "existing@example.com") {
-    throw new Error("An organization with this email already exists")
-  }
-  if (data.organizationName.toLowerCase().includes("test")) {
-    throw new Error("Organization name cannot contain 'test'")
-  }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Registration failed');
+    }
 
-  return { success: true, organizationId: "org_123456" }
-}
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Registration error:', error);
+    throw error;
+  }
+};
 
 const organizationTypes = [
   "Healthcare Institution",
