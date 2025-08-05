@@ -18,7 +18,17 @@ const SubmitReport = () => {
           </p>
         </div>
 
-        <VulnerabilityForm onSubmit={handleFormSubmit} />
+        <VulnerabilityForm onSubmit={handleFormSubmit} programs={[
+    { id: "prog-1", title: "Flagforge" },
+    { id: "prog-2", title: "Bugkhoji" },
+    { id: "prog-3", title: "LogicLabs" },
+    { id: "prog-4", title: "CodeKickStarters" }
+
+  ]}
+  submissions={[
+    { id: "sub-1", title: "Previous XSS Report" },
+    { id: "sub-2", title: "Auth Bypass Finding" }
+  ]} />
       </div>
     </ResearcherLayout>
   );

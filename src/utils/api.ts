@@ -4,6 +4,23 @@ import { QueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 
 let logoutCallback: (() => void) | null = null;
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (error?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
 
 const api = axios.create({
   baseURL: API_URL,
@@ -18,13 +35,41 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
+    // Check if it's a 401 error and not already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
+      
+      // Prevent refresh token endpoint from triggering refresh loop
+      if (originalRequest.url?.includes('/v1/refresh')) {
+        console.error('Refresh token endpoint returned 401, logging out');
+        Cookies.remove("accessToken");
+        Cookies.remove("refreshToken");
+        localStorage.clear();
+        if (logoutCallback) {
+          logoutCallback();
+        }
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
-      const refreshToken = Cookies.get("refreshToken");
+      // If already refreshing, queue the request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          if (token) {
+            originalRequest.headers["Authorization"] = `Bearer ${token}`;
+          }
+          return api(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
 
+      const refreshToken = Cookies.get("refreshToken");
       
       if (!refreshToken) {
+        console.error('No refresh token available, logging out');
         if (logoutCallback) {
           logoutCallback();
           localStorage.clear();
@@ -32,38 +77,72 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      isRefreshing = true;
+
       try {
-        const response = await api.post(
-          `${API_URL}${endpoints.auth.rotateToken}`, 
+        // Make refresh request without interceptor to avoid infinite loop
+        const refreshResponse = await axios.post(
+          `${API_URL}/v1/refresh`, 
           {}, 
-          { withCredentials: true }
+          { 
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
         );
 
-        const newAccessToken = response.data.token || Cookies.get("accessToken");
+        const newAccessToken = refreshResponse.data.token || refreshResponse.data.accessToken;
 
         if (!newAccessToken) {
-          throw new Error("Failed to refresh access token");
+          throw new Error("No access token received from refresh endpoint");
         }
 
-        // Update headers and retry original request
+        // Update the default authorization header
         api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+        
+        // Process queued requests
+        processQueue(null, newAccessToken);
+        
+        // Retry the original request
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
         return api(originalRequest);
 
       } catch (refreshError) {
-        console.error('Token refresh failed', refreshError);
-        // Use consistent cookie names
+        console.error('Token refresh failed:', refreshError);
+        
+        // Process queued requests with error
+        processQueue(refreshError, null);
+        
+        // Clear tokens and logout
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
+        localStorage.clear();
         
         if (logoutCallback) {
           logoutCallback();
-          localStorage.clear();
         }
+        
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
+    return Promise.reject(error);
+  }
+);
+
+// Request interceptor to add token to headers
+api.interceptors.request.use(
+  config => {
+    const token = Cookies.get("accessToken");
+    if (token && !config.headers["Authorization"]) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => {
     return Promise.reject(error);
   }
 );
@@ -74,7 +153,16 @@ export const setLogoutCallback = (callback: () => void) => {
 
 export const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { refetchOnWindowFocus: false, retry: 3 },
+    queries: { 
+      refetchOnWindowFocus: false, 
+      retry: (failureCount, error: any) => {
+        // Don't retry on 401 errors to avoid unnecessary requests
+        if (error?.response?.status === 401) {
+          return false;
+        }
+        return failureCount < 3;
+      }
+    },
   },
 });
 
