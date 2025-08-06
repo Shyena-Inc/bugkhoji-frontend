@@ -227,51 +227,7 @@ const Programs = () => {
                     <span>{program._count?.reports || 0} reports</span>
                   </div>
                   
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Scope:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {program.scope && Array.isArray(program.scope) && program.scope.length > 0 ? (
-                        program.scope.map((item, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {item.trim()}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="outline" className="text-xs">
-                          No scope defined
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
                   
-                  {program.rewards && (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Rewards:</h4>
-                      <div className="grid grid-cols-2 gap-1 justify-center items-center">
-                        {program.rewards.low && (
-                          <Badge variant="outline" className="text-xs bg-blue-50 dark:text-yellow-600">
-                            Low: {program.rewards.low}
-                          </Badge>
-                        )}
-                        {program.rewards.medium && (
-                          <Badge variant="outline" className="text-xs bg-yellow-50 text-rose-800">
-                            Medium: {program.rewards.medium}
-                          </Badge>
-                        )}
-                        {program.rewards.high && (
-                          <Badge variant="outline" className="text-xs bg-orange-50 text-red-600">
-                            High: {program.rewards.high}
-                          </Badge>
-                        )}
-                        {program.rewards.critical && (
-                          <Badge variant="outline" className="text-xs bg-red-50 text-red-800">
-                            Critical: {program.rewards.critical}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-    
                   <div className="flex space-x-2 pt-2">
                     <Link to={`/researcher/programs/${program.id}`} className="flex-1">
                       <Button className="w-full">
