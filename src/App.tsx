@@ -13,7 +13,7 @@ import Support from "./pages/Support";
 import ResearcherDashboard from "./pages/researcher/Dashboard";
 import Programs from "./pages/researcher/programs/Programs";
 import ProgramDetail from "./pages/researcher/programs/program";
-import Reports from "./pages/researcher/Reports";
+import Reports from "./pages/researcher/reports/Reports";
 import SubmitReport from "./pages/researcher/SubmitReport";
 import Payments from "./pages/researcher/Payments";
 import Leaderboard from "./pages/researcher/Leaderboard";
@@ -30,6 +30,7 @@ import ResearcherLoginPage from "./pages/login/ResearcherLogin";
 import Provider from "./Providers";
 import AuthGuard from "./guards/AuthGuard";
 import LoginGuard from "./guards/LoginGuard";
+import ReportDetail from "./pages/researcher/reports/report";
 import { endpoints } from "./utils/api";
 
 const App = () => {
@@ -76,6 +77,7 @@ const App = () => {
             <Route path="/researcher/programs" element={<Programs />} />
             <Route path="/researcher/programs/:id" element={<ProgramDetail />} />
             <Route path="/researcher/reports" element={<Reports />} />
+            <Route path="/researcher/report/:reportId" element={<ReportDetail/>} />
             <Route path="/researcher/submit" element={<SubmitReport />} />
             <Route path="/researcher/payments" element={<Payments />} />
             <Route path="/researcher/leaderboard" element={<Leaderboard />} />

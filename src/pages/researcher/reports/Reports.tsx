@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ResearcherLayout from '@/components/ResearcherLayout';
 import { useGetAllReports } from '@/api/reports';
-import { useAuth } from '../../context/index';
-
+import { useAuth } from '../../../context/index';
+import { Link } from 'react-router-dom';
 const Reports = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -293,7 +293,9 @@ const Reports = () => {
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button variant="ghost" size="sm" title="View Report">
-                          <Eye className="h-4 w-4" />
+                         <Link to={`/researcher/report/${report.id}`}>
+                         <Eye className="h-4 w-4" /> </Link>
+
                         </Button>
                         {report.status === 'DRAFT' && (
                           <>

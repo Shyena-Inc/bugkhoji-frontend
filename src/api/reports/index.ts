@@ -30,6 +30,20 @@ export function useGetMyReports(page: number) {
     });
 }
 
+export function useGetReportById(reportId: string) {
+    return useQuery({
+        queryKey: ['reports', 'detail', reportId],
+        queryFn: async () => {
+            const response = await api.get(endpoints.researcher.reports.getById(reportId), {
+                withCredentials: true,
+            });
+            return response.data;
+        },
+        enabled: !!reportId,
+        retry: 1,
+    });
+}
+
 export function useGetReportsByProgram(programId: string) {
     return useQuery({
         queryKey: ['reports', 'program', programId],

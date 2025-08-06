@@ -208,6 +208,7 @@ export const endpoints = {
       submitted:(id: string) => `/api/v1/reports/${id}/publish`,
       getByProgram: (programId: string) => `/api/v1/reports/program/${programId}`,
       getBySubmission: (submissionId: string) => `/api/v1/reports/submission/${submissionId}`,
+      getById: (reportId: string) => `/api/v1/reports/submission/${reportId}`,
       myReports: '/api/v1/reports/my-reports',
       inProgress: '/researcher/reports/in-progress',
       resolved: '/researcher/reports/resolved',
