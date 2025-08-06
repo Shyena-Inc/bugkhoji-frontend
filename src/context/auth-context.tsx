@@ -42,7 +42,7 @@ export function AuthProvider({ children }: Props) {
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
 
         // Set authorization header if token exists
-        const token = Cookies.get("__accessToken_");
+        const token = Cookies.get("accessToken");
         if (token) {
           api.defaults.headers["Authorization"] = `Bearer ${token}`;
         }
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: Props) {
         console.log('Parsed user:', parsedUser);
         setUser(parsedUser);
 
-        const token = Cookies.get("__accessToken_");
+        const token = Cookies.get("accessToken");
         if (token) {
           api.defaults.headers["Authorization"] = `Bearer ${token}`;
         }
@@ -111,15 +111,15 @@ export function AuthProvider({ children }: Props) {
       }
       setUser(null);
       localStorage.removeItem("currentUser");
-      Cookies.remove("__accessToken_");
-      Cookies.remove("__refreshToken_");
+      Cookies.remove("accessToken");
+      Cookies.remove("refreshToken");
       navigate("/");
     },
     [navigate, toast]
   );
 
   const refreshAuthToken = useCallback(async (): Promise<string> => {
-  const refreshToken = Cookies.get("__refreshToken_");
+  const refreshToken = Cookies.get("refreshToken");
   if (!refreshToken) {
     await logout();
     throw new Error("No refresh token found");
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: Props) {
       withCredentials: true,
     });
 
-    const accessToken = Cookies.get("__accessToken_");
+    const accessToken = Cookies.get("accessToken");
 
     if (!accessToken) {
       throw new Error("Failed to fetch new access token.");
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: Props) {
         // Wait for cookies to be set
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const token = Cookies.get("__accessToken_");
+        const token = Cookies.get("accessToken");
 
         setUser(data.user);
         if (token) {
@@ -199,15 +199,15 @@ export function AuthProvider({ children }: Props) {
       
       // Check cookies immediately
       console.log('4. Cookies before delay:', {
-        accessToken: Cookies.get("__accessToken_"),
-        refreshToken: Cookies.get("__refreshToken_"),
+        accessToken: Cookies.get("accessToken"),
+        refreshToken: Cookies.get("refreshToken"),
         refreshExpiry: Cookies.get("__refreshExpiry_")
       });
       
       // Wait a bit for cookies to be set
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      const token = Cookies.get("__accessToken_");
+      const token = Cookies.get("accessToken");
       console.log('5. Access token after delay:', token);
       
       if (!token) {
@@ -258,7 +258,7 @@ export function AuthProvider({ children }: Props) {
         // Wait for cookies to be set
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const token = Cookies.get("__accessToken_");
+        const token = Cookies.get("accessToken");
 
         setUser(data.user);
         if (token) {
@@ -291,7 +291,7 @@ export function AuthProvider({ children }: Props) {
           withCredentials: true,
         });
 
-        const accessToken = Cookies.get("__accessToken_");
+        const accessToken = Cookies.get("accessToken");
         setUser(data.user);
         api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
         localStorage.setItem("currentUser", JSON.stringify(data.user));
@@ -322,7 +322,7 @@ export function AuthProvider({ children }: Props) {
           withCredentials: true,
         });
 
-        const accessToken = Cookies.get("__accessToken_");
+        const accessToken = Cookies.get("accessToken");
         setUser(data.user);
         api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
         localStorage.setItem("currentUser", JSON.stringify(data.user));

@@ -382,8 +382,8 @@ export const NOTIFICATION_TYPES = {
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  ACCESS_TOKEN: '__accessToken_',
-  REFRESH_TOKEN: '__refreshToken_',
+  ACCESS_TOKEN: 'accessToken',
+  REFRESH_TOKEN: 'refreshToken',
   USER_PREFERENCES: '__userPreferences_',
   THEME: '__theme_',
   LANGUAGE: '__language_',
