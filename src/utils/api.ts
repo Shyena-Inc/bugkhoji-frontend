@@ -136,17 +136,20 @@ api.interceptors.response.use(
 // Request interceptor to add token to headers
 api.interceptors.request.use(
   config => {
+    console.log('Request interceptor - current headers:', config.headers);
     const token = Cookies.get("accessToken");
-    if (token && !config.headers["Authorization"]) {
+    console.log('Access token from cookies:', token);
+    if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+      console.log('Authorization header set');
     }
     return config;
   },
   error => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
-
 export const setLogoutCallback = (callback: () => void) => {
   logoutCallback = callback;
 };

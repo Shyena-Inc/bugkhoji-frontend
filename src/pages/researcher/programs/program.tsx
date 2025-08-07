@@ -92,6 +92,7 @@ console.log(program)
 
   const handleLeaveProgram = async () => {
     try {
+      
       const formData = new FormData();
       await leaveProgramMutation.mutateAsync(formData);
       setHasJoined(false);

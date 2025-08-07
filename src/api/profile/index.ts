@@ -5,9 +5,7 @@ export const useGetProfile = (options = {}) => {
   return useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      const response = await api.get(endpoints.user.profile, {
-        withCredentials: true,
-      });
+      const response = await api.get(endpoints.user.profile);
       return response.data;
     },
     ...options,
