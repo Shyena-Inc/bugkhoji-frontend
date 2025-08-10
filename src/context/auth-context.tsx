@@ -218,10 +218,6 @@ const loginResearcher = useCallback(
         });
       }
 
-      // Verify tokens were stored
-      console.log('Stored accessToken:', Cookies.get("accessToken"));
-      console.log('Stored refreshToken:', Cookies.get("refreshToken"));
-      
       // Set user and authorization header
       setUser(user);
       api.defaults.headers["Authorization"] = `Bearer ${token}`;
