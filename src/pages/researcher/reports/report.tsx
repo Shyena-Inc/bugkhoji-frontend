@@ -31,13 +31,13 @@ import { useGetReportById, useAddComment, useDeleteReport } from '@/api/reports'
 import { useAuth } from '../../../context/index';
 
 const ReportDetail = () => {
-  const { id } = useParams();
+  const { reportId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [comment, setComment] = useState('');
   const [isAddingComment, setIsAddingComment] = useState(false);
 
-  const { data: report, isLoading, error } = useGetReportById(id);
+  const { data: report, isLoading, error } = useGetReportById(reportId);
   const addCommentMutation = useAddComment();
   const deleteReportMutation = useDeleteReport();
 
@@ -46,7 +46,7 @@ const ReportDetail = () => {
     
     try {
       setIsAddingComment(true);
-      await addCommentMutation.mutateAsync({ id, comment });
+      await addCommentMutation.mutateAsync({ id: reportId, comment });
       setComment('');
     } catch (error) {
       console.error('Failed to add comment:', error);
@@ -58,7 +58,7 @@ const ReportDetail = () => {
   const handleDeleteReport = async () => {
     if (window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
       try {
-        await deleteReportMutation.mutateAsync(id);
+        await deleteReportMutation.mutateAsync(reportId);
         navigate('/researcher/reports');
       } catch (error) {
         console.error('Failed to delete report:', error);
@@ -103,10 +103,12 @@ const ReportDetail = () => {
   };
 
   const formatStatus = (status) => {
+    if (!status) return 'Unknown';
     return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const formatPriority = (priority) => {
+    if (!priority) return 'Low';
     return priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase();
   };
 
@@ -165,7 +167,7 @@ const ReportDetail = () => {
           {report.status === 'DRAFT' && (
             <div className="flex space-x-2">
               <Button 
-                onClick={() => navigate(`/reports/edit/${report.id}`)}
+                onClick={() => navigate(`/reports/edit/${reportId}`)}
                 variant="outline"
                 size="sm"
               >

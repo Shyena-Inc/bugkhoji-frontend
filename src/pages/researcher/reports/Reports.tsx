@@ -291,24 +291,24 @@ const Reports = () => {
                       }
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" title="View Report">
-                         <Link to={`/researcher/report/${report.id}`}>
-                         <Eye className="h-4 w-4" /> </Link>
-
-                        </Button>
-                        {report.status === 'DRAFT' && (
-                          <>
-                            <Button variant="ghost" size="sm" title="Edit Report">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" title="Delete Report">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+  <div className="flex space-x-2">
+    <Link to={`/researcher/report/${report.id}`}>
+      <Button variant="ghost" size="sm" title="View Report">
+        <Eye className="h-4 w-4" />
+      </Button>
+    </Link>
+    {report.status === 'DRAFT' && (
+      <>
+        <Button variant="ghost" size="sm" title="Edit Report">
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" title="Delete Report">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </>
+    )}
+  </div>
+</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
