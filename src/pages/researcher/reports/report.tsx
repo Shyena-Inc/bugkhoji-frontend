@@ -41,6 +41,13 @@ const ReportDetail = () => {
   const addCommentMutation = useAddComment();
   const deleteReportMutation = useDeleteReport();
 
+  // DEBUG: Add console logs to see what data we're getting
+  console.log('Report ID from params:', reportId);
+  console.log('Raw report data:', report);
+  console.log('Is loading:', isLoading);
+  console.log('Error:', error);
+  console.log('User:', user);
+
   const handleAddComment = async () => {
     if (!comment.trim()) return;
     
@@ -67,6 +74,7 @@ const ReportDetail = () => {
   };
 
   const getStatusIcon = (status) => {
+    if (!status) return <Clock className="h-4 w-4" />;
     const icons = {
       DRAFT: <Edit className="h-4 w-4" />,
       SUBMITTED: <Upload className="h-4 w-4" />,
@@ -80,6 +88,7 @@ const ReportDetail = () => {
   };
 
   const getStatusBadge = (status) => {
+    if (!status) return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     const variants = {
       DRAFT: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
       SUBMITTED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
@@ -93,6 +102,7 @@ const ReportDetail = () => {
   };
 
   const getPriorityBadge = (priority) => {
+    if (!priority) return 'bg-green-500 text-white';
     const variants = {
       CRITICAL: 'bg-red-500 text-white',
       HIGH: 'bg-orange-500 text-white',
@@ -110,6 +120,16 @@ const ReportDetail = () => {
   const formatPriority = (priority) => {
     if (!priority) return 'Low';
     return priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase();
+  };
+
+  // Safe date formatting
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Invalid Date';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+      return 'Invalid Date';
+    }
   };
 
   if (isLoading) {
@@ -136,6 +156,12 @@ const ReportDetail = () => {
             <p className="text-slate-600 dark:text-slate-300 mt-2">
               The report you're looking for doesn't exist or you don't have permission to view it.
             </p>
+            {/* DEBUG: Show error details */}
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 rounded-lg">
+                <p className="text-sm text-red-600">Debug Info: {JSON.stringify(error, null, 2)}</p>
+              </div>
+            )}
             <Button 
               onClick={() => navigate('/researcher/reports')}
               className="mt-4"
@@ -153,6 +179,14 @@ const ReportDetail = () => {
   return (
     <ResearcherLayout>
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* DEBUG: Show raw data */}
+        <div className="bg-yellow-50 p-4 rounded-lg mb-4">
+          <h3 className="font-bold text-yellow-800">DEBUG INFO:</h3>
+          <pre className="text-xs text-yellow-700 mt-2 overflow-auto">
+            {JSON.stringify(report, null, 2)}
+          </pre>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <Button 
@@ -192,15 +226,17 @@ const ReportDetail = () => {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="text-2xl mb-2">{report.title}</CardTitle>
+                <CardTitle className="text-2xl mb-2">
+                  {report.title || 'Untitled Report'}
+                </CardTitle>
                 <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-300">
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-4 w-4" />
-                    <span>Created {new Date(report.createdAt).toLocaleDateString()}</span>
+                    <span>Created {formatDate(report.createdAt)}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <User className="h-4 w-4" />
-                    <span>By {report.author?.name || 'Unknown'}</span>
+                    <span>By {report.author?.name || report.authorName || 'Unknown'}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     {report.isPublic ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -237,7 +273,9 @@ const ReportDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="prose dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-wrap">{report.description}</p>
+                  <p className="whitespace-pre-wrap">
+                    {report.description || 'No description provided.'}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -294,7 +332,7 @@ const ReportDetail = () => {
             )}
 
             {/* Attachments */}
-            {report.attachments && report.attachments.length > 0 && (
+            {report.attachments && Array.isArray(report.attachments) && report.attachments.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -328,7 +366,7 @@ const ReportDetail = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <MessageSquare className="h-5 w-5" />
-                  <span>Comments ({report.comments?.length || 0})</span>
+                  <span>Comments ({Array.isArray(report.comments) ? report.comments.length : 0})</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -353,25 +391,25 @@ const ReportDetail = () => {
 
                 {/* Comments List */}
                 <div className="space-y-4">
-                  {report.comments && report.comments.length > 0 ? (
+                  {Array.isArray(report.comments) && report.comments.length > 0 ? (
                     report.comments.map((comment, index) => (
                       <div key={index} className="flex space-x-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>
-                            {comment.author?.name?.charAt(0) || 'U'}
+                            {comment.author?.name?.charAt(0) || comment.authorName?.charAt(0) || 'U'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm font-medium">
-                              {comment.author?.name || 'Unknown User'}
+                              {comment.author?.name || comment.authorName || 'Unknown User'}
                             </span>
                             <span className="text-xs text-slate-500">
-                              {new Date(comment.createdAt).toLocaleDateString()}
+                              {formatDate(comment.createdAt)}
                             </span>
                           </div>
                           <p className="text-sm text-slate-700 dark:text-slate-300">
-                            {comment.content}
+                            {comment.content || comment.text || 'No content'}
                           </p>
                         </div>
                       </div>
@@ -411,20 +449,20 @@ const ReportDetail = () => {
 
                 <div>
                   <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Last Updated</label>
-                  <p className="text-sm">{new Date(report.updatedAt).toLocaleDateString()}</p>
+                  <p className="text-sm">{formatDate(report.updatedAt)}</p>
                 </div>
 
                 {report.resolvedAt && (
                   <div>
                     <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Resolved At</label>
-                    <p className="text-sm">{new Date(report.resolvedAt).toLocaleDateString()}</p>
+                    <p className="text-sm">{formatDate(report.resolvedAt)}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Tags */}
-            {report.tags && report.tags.length > 0 && (
+            {Array.isArray(report.tags) && report.tags.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
