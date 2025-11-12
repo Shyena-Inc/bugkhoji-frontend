@@ -102,6 +102,32 @@ const Navbar = () => {
                 </Link>
               </>
             )}
+
+            {authenticated && user?.role === "ADMIN" && (
+              <>
+                <Link
+                  to="/admin/dashboard"
+                  className="relative text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium group"
+                >
+                  Dashboard
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+                <Link
+                  to="/admin/manage-users"
+                  className="relative text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium group"
+                >
+                  Manage Users
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+                <Link
+                  to="/admin/manage-programs"
+                  className="relative text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium group"
+                >
+                  Manage Programs
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+              </>
+            )}
             
             {!authenticated && (
               <>
@@ -145,7 +171,7 @@ const Navbar = () => {
                       {user?.role === "RESEARCHER"
                         ? user.firstName[0]
                         : user?.role === "ORGANIZATION"
-                        ? user.organizationName[0]
+                        ? user.organizationName
                         : user?.role === "ADMIN"
                         ? user.name[0]
                         : ""}
@@ -181,7 +207,13 @@ const Navbar = () => {
                     <Link to={`/getUserProfile/${id}`}>Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link to={user?.role === "ORGANIZATION" ? "/organization/dashboard" : "/researcher/dashboard"}>
+                    <Link to={
+                      user?.role === "ORGANIZATION" 
+                        ? "/organization/dashboard" 
+                        : user?.role === "ADMIN"
+                        ? "/admin/dashboard"
+                        : "/researcher/dashboard"
+                    }>
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
@@ -201,9 +233,9 @@ const Navbar = () => {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <button onClick={onHandleSubmit} className="text-red-500 flex items-center gap-2">
-                      <LogOut /> <p>Log out</p>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <button onClick={onHandleSubmit} className="text-red-500 flex items-center gap-2 cursor-pointer w-full">
+                      <LogOut className="cursor-pointer" /> <p>Log out</p>
                     </button>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -222,7 +254,7 @@ const Navbar = () => {
                 <DropdownMenuContent className="w-56 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-white/20 dark:border-slate-700/50 rounded-xl shadow-2xl">
                   <DropdownMenuItem asChild>
                     <Link
-                      to="/login/researcher"
+                      to="/researcher/login"
                       className="w-full flex items-center px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-lg"
                     >
                       <User className="mr-3 h-4 w-4 text-blue-600 dark:text-cyan-400" />
@@ -231,7 +263,7 @@ const Navbar = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link
-                      to="/login/organization"
+                      to="/organization/login"
                       className="w-full flex items-center px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-lg"
                     >
                       <Building className="mr-3 h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -264,12 +296,13 @@ const Navbar = () => {
               variant="ghost"
               size="sm"
               onClick={toggleDarkMode}
-              className="p-3 rounded-xl hover:bg-blue-50/80 dark:hover:bg-slate-800/50 backdrop-blur-sm"
+              className="p-3 rounded-xl hover:bg-blue-50/80 dark:hover:bg-slate-800/50 backdrop-blur-sm cursor-pointer"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
               {isDark ? (
-                <Sun className="h-5 w-5 text-yellow-500" />
+                <Sun className="h-5 w-5 text-yellow-500 cursor-pointer" />
               ) : (
-                <Moon className="h-5 w-5 text-slate-600" />
+                <Moon className="h-5 w-5 text-slate-600 cursor-pointer" />
               )}
             </Button>
           </div>
@@ -280,12 +313,13 @@ const Navbar = () => {
               variant="ghost"
               size="sm"
               onClick={toggleDarkMode}
-              className="p-3 rounded-xl"
+              className="p-3 rounded-xl cursor-pointer"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
               {isDark ? (
-                <Sun className="h-5 w-5" />
+                <Sun className="h-5 w-5 cursor-pointer" />
               ) : (
-                <Moon className="h-5 w-5" />
+                <Moon className="h-5 w-5 cursor-pointer" />
               )}
             </Button>
 
@@ -293,12 +327,13 @@ const Navbar = () => {
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-3 rounded-xl"
+              className="p-3 rounded-xl cursor-pointer"
+              title={isMobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 cursor-pointer" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5 cursor-pointer" />
               )}
             </Button>
           </div>
@@ -361,6 +396,32 @@ const Navbar = () => {
                   </Link>
                 </>
               )}
+
+              {authenticated && user?.role === "ADMIN" && (
+                <>
+                  <Link
+                    to="/admin/dashboard"
+                    className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/admin/manage-users"
+                    className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Manage Users
+                  </Link>
+                  <Link
+                    to="/admin/manage-programs"
+                    className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Manage Programs
+                  </Link>
+                </>
+              )}
               
               {!authenticated && (
                 <>
@@ -407,7 +468,13 @@ const Navbar = () => {
                       Profile
                     </Link>
                     <Link
-                      to={user?.role === "ORGANIZATION" ? "/org-dashboard" : "/dashboard"}
+                      to={
+                        user?.role === "ORGANIZATION" 
+                          ? "/organization/dashboard" 
+                          : user?.role === "ADMIN"
+                          ? "/admin/dashboard"
+                          : "/researcher/dashboard"
+                      }
                       className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -458,14 +525,14 @@ const Navbar = () => {
                   </div>
                   <div className="flex flex-col space-y-3">
                     <Link
-                      to="/login/researcher"
+                      to="/researcher/login"
                       className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Researcher
                     </Link>
                     <Link
-                      to="/login/organization"
+                      to="/organization/login"
                       className="text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >

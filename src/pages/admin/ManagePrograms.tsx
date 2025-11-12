@@ -4,73 +4,135 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Eye, Edit, Archive, CheckCircle, XCircle } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Loader2, Pause } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
+import { useGetAllPrograms, useApproveProgram, useRejectProgram, useSuspendProgram } from '@/api/admin';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ManagePrograms = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [selectedProgram, setSelectedProgram] = useState<any>(null);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | 'suspend' | null>(null);
+  const { toast } = useToast();
 
-  // Mock program data
-  const programs = [
-    {
-      id: 1,
-      name: 'TechCorp Bug Bounty',
-      organization: 'TechCorp Inc.',
-      status: 'active',
-      scope: 'Web application, Mobile app',
-      reportsCount: 156,
-      maxReward: '$10,000',
-      createdDate: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'StartupX Security Program',
-      organization: 'StartupX',
-      status: 'pending',
-      scope: 'API endpoints, Web platform',
-      reportsCount: 23,
-      maxReward: '$5,000',
-      createdDate: '2024-03-01'
-    },
-    {
-      id: 3,
-      name: 'Enterprise Security Initiative',
-      organization: 'BigCorp Ltd.',
-      status: 'active',
-      scope: 'All digital assets',
-      reportsCount: 89,
-      maxReward: '$25,000',
-      createdDate: '2023-11-20'
-    },
-    {
-      id: 4,
-      name: 'FinanceApp Vulnerability Program',
-      organization: 'FinanceApp',
-      status: 'archived',
-      scope: 'Mobile application only',
-      reportsCount: 67,
-      maxReward: '$15,000',
-      createdDate: '2023-08-10'
+  const { data, isLoading, error } = useGetAllPrograms(page, {
+    search: searchTerm || undefined,
+  });
+
+  const approveProgramMutation = useApproveProgram();
+  const rejectProgramMutation = useRejectProgram();
+  const suspendProgramMutation = useSuspendProgram();
+
+  const handleApproveProgram = async () => {
+    if (!selectedProgram) return;
+    
+    try {
+      await approveProgramMutation.mutateAsync(selectedProgram.id);
+      toast({
+        title: 'Success',
+        description: 'Program has been approved',
+        variant: 'default',
+      });
+      setActionType(null);
+      setSelectedProgram(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to approve program',
+        variant: 'destructive',
+      });
     }
-  ];
+  };
 
-  const filteredPrograms = programs.filter(program =>
-    program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    program.organization.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleRejectProgram = async () => {
+    if (!selectedProgram) return;
+    
+    try {
+      await rejectProgramMutation.mutateAsync({ id: selectedProgram.id, reason: 'Admin rejection' });
+      toast({
+        title: 'Success',
+        description: 'Program has been rejected',
+        variant: 'default',
+      });
+      setActionType(null);
+      setSelectedProgram(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to reject program',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSuspendProgram = async () => {
+    if (!selectedProgram) return;
+    
+    try {
+      await suspendProgramMutation.mutateAsync({ id: selectedProgram.id, reason: 'Admin suspension' });
+      toast({
+        title: 'Success',
+        description: 'Program has been suspended',
+        variant: 'default',
+      });
+      setActionType(null);
+      setSelectedProgram(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to suspend program',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const programs = data?.data || [];
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
+    switch (status.toUpperCase()) {
+      case 'ACTIVE':
         return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pending</Badge>;
-      case 'archived':
-        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">Archived</Badge>;
+      case 'DRAFT':
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Draft</Badge>;
+      case 'PAUSED':
+        return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">Paused</Badge>;
+      case 'CLOSED':
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">Closed</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="text-center text-red-600">
+          Error loading programs: {error.message}
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -102,14 +164,14 @@ const ManagePrograms = () => {
 
         {/* Programs Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredPrograms.map((program) => (
+          {programs.map((program: any) => (
             <Card key={program.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-xl">{program.name}</CardTitle>
+                    <CardTitle className="text-xl">{program.title}</CardTitle>
                     <CardDescription className="text-base mt-1">
-                      {program.organization}
+                      {program.organization?.name || 'Unknown Organization'}
                     </CardDescription>
                   </div>
                   {getStatusBadge(program.status)}
@@ -119,44 +181,68 @@ const ManagePrograms = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-slate-600 dark:text-slate-400">Reports</p>
-                    <p className="font-semibold text-lg">{program.reportsCount}</p>
+                    <p className="font-semibold text-lg">{program._count?.reports || 0}</p>
                   </div>
                   <div>
-                    <p className="text-slate-600 dark:text-slate-400">Max Reward</p>
-                    <p className="font-semibold text-lg text-green-600 dark:text-green-400">{program.maxReward}</p>
+                    <p className="text-slate-600 dark:text-slate-400">Participants</p>
+                    <p className="font-semibold text-lg">{program._count?.participants || 0}</p>
                   </div>
                 </div>
                 
                 <div>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Scope</p>
-                  <p className="text-sm">{program.scope}</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Description</p>
+                  <p className="text-sm line-clamp-2">{program.description || 'No description'}</p>
                 </div>
 
                 <div>
                   <p className="text-slate-600 dark:text-slate-400 text-sm">
-                    Created: {new Date(program.createdDate).toLocaleDateString()}
+                    Created: {new Date(program.createdAt).toLocaleDateString()}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-4 border-t">
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </Button>
-                  {program.status === 'pending' && (
-                    <Button size="sm" className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
-                      <CheckCircle className="h-4 w-4" />
-                      Approve
-                    </Button>
+                <div className="flex items-center gap-2 pt-4 border-t flex-wrap">
+                  {program.status === 'DRAFT' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 cursor-pointer"
+                        onClick={() => {
+                          setSelectedProgram(program);
+                          setActionType('approve');
+                        }}
+                        title="Approve program"
+                      >
+                        <CheckCircle className="h-4 w-4 cursor-pointer" />
+                        Approve
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                        onClick={() => {
+                          setSelectedProgram(program);
+                          setActionType('reject');
+                        }}
+                        title="Reject program"
+                      >
+                        <XCircle className="h-4 w-4 cursor-pointer" />
+                        Reject
+                      </Button>
+                    </>
                   )}
-                  {program.status === 'active' && (
-                    <Button variant="outline" size="sm" className="flex items-center gap-2 text-orange-600 hover:text-orange-700">
-                      <Archive className="h-4 w-4" />
-                      Archive
+                  {program.status === 'ACTIVE' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 cursor-pointer"
+                      onClick={() => {
+                        setSelectedProgram(program);
+                        setActionType('suspend');
+                      }}
+                      title="Suspend program"
+                    >
+                      <Pause className="h-4 w-4 cursor-pointer" />
+                      Suspend
                     </Button>
                   )}
                 </div>
@@ -165,14 +251,125 @@ const ManagePrograms = () => {
           ))}
         </div>
 
-        {filteredPrograms.length === 0 && (
+        {programs.length === 0 && (
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-slate-500 dark:text-slate-400">No programs found matching your search.</p>
             </CardContent>
           </Card>
         )}
+
+        {/* Pagination */}
+        {data?.pagination && programs.length > 0 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-slate-600">
+              Showing {programs.length} of {data.pagination.total} programs
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => p + 1)}
+                disabled={page >= data.pagination.totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={actionType === 'approve'} onOpenChange={(open) => !open && setActionType(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Program</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to approve "{selectedProgram?.title}"? This will make it visible to researchers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleApproveProgram}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {approveProgramMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Approving...
+                </>
+              ) : (
+                'Approve'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={actionType === 'reject'} onOpenChange={(open) => !open && setActionType(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Program</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject "{selectedProgram?.title}"? This action will close the program.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRejectProgram}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {rejectProgramMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Rejecting...
+                </>
+              ) : (
+                'Reject'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Suspend Confirmation Dialog */}
+      <AlertDialog open={actionType === 'suspend'} onOpenChange={(open) => !open && setActionType(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Suspend Program</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to suspend "{selectedProgram?.title}"? This will pause the program temporarily.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSuspendProgram}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {suspendProgramMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suspending...
+                </>
+              ) : (
+                'Suspend'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

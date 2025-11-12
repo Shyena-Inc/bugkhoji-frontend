@@ -13,6 +13,7 @@
   import api, { endpoints } from "@/utils/api";
   import { AdminLoginFormData, ResearcherLoginFormData, OrganizationLoginFormData, ResearcherRegisterFormData, OrganizationRegisterFormData } from "@/types/auth";
   import Cookies from "js-cookie";
+  import { ErrorHandler } from "@/utils/errorHandler";
 
   type Props = {
     children: React.ReactNode;
@@ -30,7 +31,6 @@
 
 
     useEffect(() => {
-      console.log('=== AUTH PROVIDER DEBUG ===');
 
       // Check for user data from URL parameters first
       const userFromURL = searchParams.get("currentUser");
@@ -55,11 +55,8 @@
           setLoading(false);
           return;
         } catch (error) {
-          console.error("Error parsing user data from URL:", error);
-          toast({
-            title: "Invalid user data",
-            variant: "destructive",
-          });
+          ErrorHandler.logError(error, "Parse user data from URL");
+          ErrorHandler.handleApiError(error, "Invalid user data received");
           navigate("/login");
           setLoading(false);
           return;
@@ -68,12 +65,10 @@
 
       // If no URL user data, check localStorage
       const storedUser = localStorage.getItem("currentUser");
-      console.log('Stored user from localStorage:', storedUser);
 
       if (storedUser && storedUser !== "undefined") {
         try {
           const parsedUser = JSON.parse(storedUser);
-          console.log('Parsed user:', parsedUser);
           setUser(parsedUser);
 
           const token = Cookies.get("accessToken");
@@ -81,39 +76,48 @@
             api.defaults.headers["Authorization"] = `Bearer ${token}`;
           }
         } catch (error) {
-          console.error('Error parsing stored user:', error);
+          ErrorHandler.logError(error, "Parse stored user");
         }
       } else {
-        console.log('No valid user found in localStorage');
+        console.error('No valid user found in localStorage');
       }
 
-      console.log('Auth loading set to false');
       setLoading(false);
     }, [navigate, searchParams, toast]);
 
     const logout = useCallback(
       async (req: boolean = true) => {
-        if (req) {
-          try {
-            const res = await api.get(endpoints.auth.logout);
-            toast({
-              title: "Success",
-              description: res.data.message,
-              variant: "default",
-            });
-          } catch (err) {
-            toast({
-              title: "Error",
-              description: err.message,
-              variant: "destructive",
-            });
+        try {
+          if (req) {
+            try {
+              const res = await api.post(endpoints.auth.logout, {}, { withCredentials: true });
+              toast({
+                title: "Logged out successfully",
+                description: res.data.message || "You have been logged out",
+                variant: "default",
+              });
+            } catch (err: any) {
+              ErrorHandler.logError(err, "Logout API");
+              // Continue with client-side cleanup even if API call fails
+              ErrorHandler.showInfo("Logged out", "Session ended");
+            }
           }
+        } finally {
+          // Always perform client-side cleanup
+          setUser(null);
+          localStorage.clear(); // Clear all localStorage
+          sessionStorage.clear(); // Clear all sessionStorage
+          Cookies.remove("accessToken", { path: '/' });
+          Cookies.remove("refreshToken", { path: '/' });
+          Cookies.remove("__refreshExpiry_", { path: '/' });
+          
+          // Clear authorization header
+          delete api.defaults.headers.common["Authorization"];
+          delete api.defaults.headers["Authorization"];
+          
+          // Navigate to home page
+          navigate("/", { replace: true });
         }
-        setUser(null);
-        localStorage.removeItem("currentUser");
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        navigate("/");
       },
       [navigate, toast]
     );
@@ -139,7 +143,7 @@
       api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
       return accessToken;
     } catch (err) {
-      console.error("Failed to refresh token", err);
+      ErrorHandler.logError(err, "Token refresh");
       await logout();
       throw new Error("Token refresh failed");
     }
@@ -171,13 +175,9 @@
             variant: "default",
           });
 
-          navigate('/dashboard'); 
+          navigate('/admin/dashboard'); 
         } catch (error) {
-          toast({
-            title: "Login failed",
-            description: error?.response?.data?.message || error?.message || "An unknown error occurred",
-            variant: "destructive",
-          });
+          ErrorHandler.handleApiError(error, "Admin login failed");
         }
       },
       [toast, navigate]
@@ -185,9 +185,7 @@
 
 const loginResearcher = useCallback(
   async (login: ResearcherLoginFormData) => {
-    try {
-      console.log('Starting researcher login...');
-      
+    try {      
       // Clear any existing tokens first
       Cookies.remove("accessToken");
       Cookies.remove("refreshToken");
@@ -196,7 +194,6 @@ const loginResearcher = useCallback(
         withCredentials: true,
       });
 
-      console.log('Login response:', response);
       
       // Extract tokens from response body (if not in cookies)
       const { token, refreshToken, user } = response.data;
@@ -231,12 +228,7 @@ const loginResearcher = useCallback(
       navigate('/researcher/dashboard');
       
     } catch (error) {
-      console.error('Login error:', error);
-      toast({
-        title: "Login failed",
-        description: error?.response?.data?.message || "Invalid credentials",
-        variant: "destructive",
-      });
+      ErrorHandler.handleApiError(error, "Researcher login failed");
     }
   },
   [toast, navigate]
@@ -266,13 +258,22 @@ const loginResearcher = useCallback(
             variant: "default",
           });
 
-          navigate('/organizer/dashboard');
+          // Check verification status
+          const isPending = data.user?.verificationStatus === 'pending' || !data.user?.verified;
+          
+          if (isPending) {
+            // Allow access to dashboard but show verification banner
+            toast({
+              title: "Verification Pending",
+              description: "Your organization is pending verification. You can use all features, but programs won't be public until verified.",
+              variant: "default",
+            });
+          }
+          
+          // Always redirect to dashboard - banner will show if pending
+          navigate('/organization/dashboard');
         } catch (error) {
-          toast({
-            title: "Login failed",
-            description: error?.response?.data?.message || error?.message || "An unknown error occurred",
-            variant: "destructive",
-          });
+          ErrorHandler.handleApiError(error, "Organization login failed");
         }
       },
       [toast, navigate]
@@ -290,19 +291,8 @@ const loginResearcher = useCallback(
           api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
           localStorage.setItem("currentUser", JSON.stringify(data.user));
         } catch (error) {
-          console.error('=== REGISTRATION ERROR DEBUG ===');
-          console.error('Full error object:', error);
-          console.error('Error response data:', error?.response?.data);
-          console.error('Error response status:', error?.response?.status);
-          console.error('Error response headers:', error?.response?.headers);
-          console.error('Error message:', error?.message);
-          console.error('===================================');
-          
-          toast({
-            title: "Registration failed",
-            description: error?.response?.data?.error || error?.response?.data?.message || error?.message || "An unknown error occurred",
-            variant: "destructive",
-          });
+          ErrorHandler.logError(error, "Researcher registration");
+          ErrorHandler.handleApiError(error, "Registration failed");
           throw error; // Re-throw so the form component can handle it
         }
       },
@@ -321,19 +311,8 @@ const loginResearcher = useCallback(
           api.defaults.headers["Authorization"] = `Bearer ${accessToken}`;
           localStorage.setItem("currentUser", JSON.stringify(data.user));
         } catch (error) {
-          console.error('=== ORGANIZATION REGISTRATION ERROR DEBUG ===');
-          console.error('Full error object:', error);
-          console.error('Error response data:', error?.response?.data);
-          console.error('Error response status:', error?.response?.status);
-          console.error('Error response headers:', error?.response?.headers);
-          console.error('Error message:', error?.message);
-          console.error('===================================');
-          
-          toast({
-            title: "Registration failed",
-            description: error?.response?.data?.error || error?.response?.data?.message || error?.message || "An unknown error occurred",
-            variant: "destructive",
-          });
+          ErrorHandler.logError(error, "Organization registration");
+          ErrorHandler.handleApiError(error, "Registration failed");
           throw error; // Re-throw so the form component can handle it
         }
       },

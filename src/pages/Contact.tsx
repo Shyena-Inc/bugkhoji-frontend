@@ -1,9 +1,11 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import { Shield, Mail, Phone, MapPin, Send } from "lucide-react";
+import { Shield, Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/utils/api";
+import { ErrorHandler } from "@/utils/errorHandler";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -12,9 +14,10 @@ const Contact = () => {
     subject: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Basic validation
@@ -27,19 +30,65 @@ const Contact = () => {
       return;
     }
 
-    // Simulate form submission
-    toast({
-      title: "Message Sent",
-      description: "Thank you for your message. We'll get back to you soon!",
-    });
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+    // Message length validation
+    if (formData.message.length < 10) {
+      toast({
+        title: "Message Too Short",
+        description: "Please provide a message with at least 10 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await api.post('/api/v1/contact', {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject || 'Contact Form Submission',
+        message: formData.message,
+        type: 'contact'
+      });
+
+      toast({
+        title: "Message Sent",
+        description: response.data.message || "Thank you for your message. We'll get back to you soon!",
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error: any) {
+      ErrorHandler.handleApiError(error, 'Failed to send message');
+      
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || "Failed to send message. Please try again later.";
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -224,9 +273,19 @@ const Contact = () => {
                   <Button
                     type="submit"
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isSubmitting}
                   >
-                    <Send className="mr-2 h-4 w-4" />
-                    Send Message
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Send Message
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>

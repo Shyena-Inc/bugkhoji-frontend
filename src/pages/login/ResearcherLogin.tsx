@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Eye, EyeOff, Loader2, Mail, Lock, AlertCircle, ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../../context"
+import { ErrorHandler } from "@/utils/errorHandler"
 
 interface ResearcherLoginFormData {
   email: string
@@ -77,20 +78,20 @@ export default function ResearcherLoginPage() {
       // No need to navigate here as loginResearcher will handle it
       
     } catch (error) {
-      console.error("Login error:", error)
-
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
-
-      if (errorMessage.includes("Invalid credentials") || errorMessage.includes("401")) {
-        setGeneralError("Invalid email or password. Please check your credentials and try again.")
-      } else if (errorMessage.includes("locked") || errorMessage.includes("429")) {
-        setGeneralError("Your account has been temporarily locked. Please contact support or try again later.")
+      ErrorHandler.logError(error, "Researcher login");
+      
+      const apiError = ErrorHandler.handleApiError(error);
+      
+      // Set inline error message for the form
+      if (apiError.status === 401) {
+        setGeneralError("Invalid email or password. Please check your credentials and try again.");
+      } else if (apiError.status === 429) {
+        setGeneralError("Too many login attempts. Please try again later.");
+      } else if (apiError.code === 'NETWORK_ERROR') {
+        setGeneralError("Unable to connect. Please check your internet connection.");
       } else {
-        setGeneralError("Unable to sign in. Please check your connection and try again.")
+        setGeneralError(apiError.message);
       }
-
-      // The auth context will handle its own toast, so we might not need this one
-      // But keeping it for additional user feedback
     } finally {
       setIsLoading(false)
     }

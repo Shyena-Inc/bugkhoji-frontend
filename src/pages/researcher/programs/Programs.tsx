@@ -235,7 +235,17 @@ const Programs = () => {
                         Join Program
                       </Button>
                     </Link>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (program.websiteUrl) {
+                          window.open(program.websiteUrl, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
+                      disabled={!program.websiteUrl}
+                      title={program.websiteUrl ? `Visit ${program.websiteName}` : 'Website URL not available'}
+                    >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </div>

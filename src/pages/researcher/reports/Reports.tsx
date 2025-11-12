@@ -293,17 +293,30 @@ const Reports = () => {
                     <TableCell>
   <div className="flex space-x-2">
     <Link to={`/researcher/report/${report.id}`}>
-      <Button variant="ghost" size="sm" title="View Report">
-        <Eye className="h-4 w-4" />
+      <Button variant="ghost" size="sm" title="View Report" className="hover:bg-slate-100 dark:hover:bg-slate-700">
+        <Eye className="h-4 w-4 cursor-pointer" />
       </Button>
     </Link>
     {report.status === 'DRAFT' && (
       <>
-        <Button variant="ghost" size="sm" title="Edit Report">
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="sm" title="Delete Report">
-          <Trash2 className="h-4 w-4" />
+        <Link to={`/researcher/report/${report.id}/edit`}>
+          <Button variant="ghost" size="sm" title="Edit Report" className="hover:bg-slate-100 dark:hover:bg-slate-700">
+            <Edit className="h-4 w-4 cursor-pointer" />
+          </Button>
+        </Link>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          title="Delete Report"
+          className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
+          onClick={() => {
+            if (confirm('Are you sure you want to delete this report?')) {
+              // Add delete handler here
+              console.log('Delete report:', report.id);
+            }
+          }}
+        >
+          <Trash2 className="h-4 w-4 cursor-pointer" />
         </Button>
       </>
     )}

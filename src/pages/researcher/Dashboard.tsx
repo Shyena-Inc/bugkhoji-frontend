@@ -2,7 +2,7 @@ import { Shield, Bug, Award, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ResearcherLayout from "@/components/ResearcherLayout"
-import { useGetProfile } from "@/api/profile"
+import { useUserProfile } from "@/api/profile"
 import { useAuth } from "../../context/index"
 import { ResearcherUser } from "../../types/user" 
 import { useGetMyReports } from "@/api/reports"
@@ -10,12 +10,10 @@ import { useGetMyReports } from "@/api/reports"
 const ResearcherDashboard = () => {
   const { user } = useAuth();
   
-  // Debug logging
-  console.log('User from auth:', user);
   
   const isResearcher = user?.role === 'RESEARCHER';
   
-  const { data: profile, isLoading: profileLoading, error: profileError } = useGetProfile({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile({
     enabled: !!user?.id && isResearcher
   });
 

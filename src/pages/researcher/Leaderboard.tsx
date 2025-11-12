@@ -1,97 +1,59 @@
 
 import { useState } from 'react';
-import { Trophy, Medal, Star, TrendingUp, Users, Award, Crown } from 'lucide-react';
+import { Trophy, Medal, Star, TrendingUp, Users, Award, Crown, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import ResearcherLayout from '@/components/ResearcherLayout';
+import { useGetLeaderboard } from '@/api/leaderboard';
+import { useAuth } from '@/context';
+import { API_URL } from '@/utils/config-global';
 
 const Leaderboard = () => {
-  const [timeFrame, setTimeFrame] = useState('all-time');
+  const [period, setPeriod] = useState<'week' | 'month' | 'year' | 'all'>('all');
+  const { user } = useAuth();
+  
+  const { data: leaderboard, isLoading, error } = useGetLeaderboard({ 
+    limit: 50, 
+    period 
+  });
 
-  const currentUser = {
-    rank: 23,
-    name: 'You',
-    points: 8750,
-    badges: 12,
-    reports: 45,
-    earnings: 15400
+  // Helper function to get full logo URL
+  const getLogoUrl = (logo: string | null): string | undefined => {
+    if (!logo) return undefined;
+    // If logo already starts with http, return as is
+    if (logo.startsWith('http')) return logo;
+    // Otherwise, prepend API_URL
+    return `${API_URL}${logo}`;
   };
 
-  const topResearchers = [
-    {
-      rank: 1,
-      name: 'Alex Thompson',
-      username: 'alexsec',
-      points: 45780,
-      badges: 89,
-      reports: 234,
-      earnings: 125400,
-      level: 'Legend',
-      specialBadge: 'Hall of Fame'
-    },
-    {
-      rank: 2,
-      name: 'Sarah Chen',
-      username: 'sarahc',
-      points: 42340,
-      badges: 76,
-      reports: 198,
-      earnings: 98750,
-      level: 'Master',
-      specialBadge: 'Critical Hunter'
-    },
-    {
-      rank: 3,
-      name: 'Marcus Rodriguez',
-      username: 'marcusr',
-      points: 38920,
-      badges: 68,
-      reports: 187,
-      earnings: 87300,
-      level: 'Master',
-      specialBadge: 'Bug Slayer'
-    },
-    {
-      rank: 4,
-      name: 'Emily Watson',
-      username: 'emilyw',
-      points: 35670,
-      badges: 61,
-      reports: 156,
-      earnings: 74200,
-      level: 'Expert',
-      specialBadge: 'Web Specialist'
-    },
-    {
-      rank: 5,
-      name: 'David Park',
-      username: 'davidp',
-      points: 32450,
-      badges: 54,
-      reports: 143,
-      earnings: 68900,
-      level: 'Expert',
-      specialBadge: 'Mobile Master'
-    }
-  ];
-
-  const achievements = [
-    { name: 'First Blood', description: 'Submit your first vulnerability report', earned: true },
-    { name: 'Critical Strike', description: 'Find a critical severity vulnerability', earned: true },
-    { name: 'Hat Trick', description: 'Submit 3 valid reports in a week', earned: true },
-    { name: 'Bounty Hunter', description: 'Earn $10,000 in bounties', earned: true },
-    { name: 'Master Detective', description: 'Find 50 valid vulnerabilities', earned: false },
-    { name: 'Elite Researcher', description: 'Reach top 10 on leaderboard', earned: false }
-  ];
+  // Find current user in leaderboard
+  const currentUserEntry = leaderboard?.find(entry => entry.id === user?.id);
+  
+  const currentUser = currentUserEntry ? {
+    rank: currentUserEntry.rank,
+    name: currentUserEntry.name,
+    points: currentUserEntry.score,
+    reports: currentUserEntry.totalReports,
+    earnings: currentUserEntry.totalRewards
+  } : null;
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />;
     if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />;
     if (rank === 3) return <Award className="h-5 w-5 text-amber-600" />;
     return <span className="text-sm font-bold text-slate-600">#{rank}</span>;
+  };
+
+  const getLevel = (score: number): string => {
+    if (score >= 500) return 'Legend';
+    if (score >= 300) return 'Master';
+    if (score >= 150) return 'Expert';
+    if (score >= 50) return 'Advanced';
+    return 'Intermediate';
   };
 
   const getLevelColor = (level: string) => {
@@ -105,6 +67,14 @@ const Leaderboard = () => {
     return colors[level as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  const getSpecialBadge = (rank: number, score: number): string | null => {
+    if (rank === 1) return 'Hall of Fame';
+    if (score >= 500) return 'Elite Researcher';
+    if (score >= 300) return 'Bug Slayer';
+    if (score >= 150) return 'Critical Hunter';
+    return null;
+  };
+
   return (
     <ResearcherLayout>
       <div className="max-w-6xl mx-auto space-y-6">
@@ -116,56 +86,78 @@ const Leaderboard = () => {
             </p>
           </div>
           
-          <Select value={timeFrame} onValueChange={setTimeFrame}>
+          <Select value={period} onValueChange={(value) => setPeriod(value as any)}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select time frame" />
+              <SelectValue placeholder="Select time period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all-time">All Time</SelectItem>
-              <SelectItem value="this-year">This Year</SelectItem>
-              <SelectItem value="this-month">This Month</SelectItem>
-              <SelectItem value="this-week">This Week</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Failed to load leaderboard. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Content */}
+        {!isLoading && !error && leaderboard && (
+          <>
+
         {/* Your Rank Card */}
-        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="mr-2 h-5 w-5 text-blue-600" />
-              Your Ranking
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">#{currentUser.rank}</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Global Rank</div>
+        {currentUser && (
+          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="mr-2 h-5 w-5 text-blue-600" />
+                Your Ranking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">#{currentUser.rank}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Global Rank</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{currentUser.points.toLocaleString()}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Points</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{currentUser.reports}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Reports</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">${currentUser.earnings.toLocaleString()}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Earnings</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{currentUser.points.toLocaleString()}</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Points</div>
+              
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Current Level</span>
+                  <span>{getLevel(currentUser.points)}</span>
+                </div>
+                <Progress value={(currentUser.points % 100)} className="h-2" />
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{currentUser.reports}</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Reports</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">${currentUser.earnings.toLocaleString()}</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">Earnings</div>
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-2">
-                <span>Progress to next rank</span>
-                <span>Level 4: Expert</span>
-              </div>
-              <Progress value={68} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Top Researchers */}
@@ -178,81 +170,71 @@ const Leaderboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {topResearchers.map((researcher) => (
-                    <div key={researcher.rank} className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          {getRankIcon(researcher.rank)}
-                        </div>
-                        
-                        <Avatar>
-                          <AvatarFallback>
-                            {researcher.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-medium">{researcher.name}</h3>
-                            <Badge className={getLevelColor(researcher.level)}>
-                              {researcher.level}
-                            </Badge>
-                            {researcher.specialBadge && (
-                              <Badge variant="outline" className="text-xs">
-                                {researcher.specialBadge}
-                              </Badge>
+                {leaderboard.length === 0 ? (
+                  <div className="text-center py-8 text-slate-600 dark:text-slate-400">
+                    No researchers found for this period.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {leaderboard.map((researcher) => {
+                      const level = getLevel(researcher.score);
+                      const specialBadge = getSpecialBadge(researcher.rank, researcher.score);
+                      
+                      return (
+                        <div key={researcher.id} className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex-shrink-0">
+                              {getRankIcon(researcher.rank)}
+                            </div>
+                            
+                            <Avatar>
+                              <AvatarImage src={getLogoUrl(researcher.logo)} alt={researcher.name} />
+                              <AvatarFallback>
+                                {researcher.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <h3 className="font-medium">{researcher.name}</h3>
+                                <Badge className={getLevelColor(level)}>
+                                  {level}
+                                </Badge>
+                                {specialBadge && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {specialBadge}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">
+                                @{researcher.username || 'anonymous'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="font-bold text-lg">{researcher.score.toLocaleString()}</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">
+                              {researcher.totalReports} reports
+                            </div>
+                            {researcher.totalRewards > 0 && (
+                              <div className="text-xs text-green-600 dark:text-green-400">
+                                ${researcher.totalRewards.toLocaleString()}
+                              </div>
                             )}
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">@{researcher.username}</p>
                         </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className="font-bold text-lg">{researcher.points.toLocaleString()}</div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">{researcher.reports} reports</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Achievements */}
+          {/* Stats */}
           <div>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Star className="mr-2 h-5 w-5 text-yellow-500" />
-                  Achievements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {achievements.map((achievement, index) => (
-                    <div key={index} className={`p-3 rounded-lg border ${achievement.earned ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50'}`}>
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${achievement.earned ? 'bg-green-500' : 'bg-slate-300'}`}>
-                          {achievement.earned ? (
-                            <Award className="h-4 w-4 text-white" />
-                          ) : (
-                            <div className="w-2 h-2 bg-white rounded-full" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{achievement.name}</h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">{achievement.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Stats */}
-            <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="mr-2 h-5 w-5" />
@@ -263,25 +245,75 @@ const Leaderboard = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-sm">Total Researchers</span>
-                    <span className="font-medium">12,847</span>
+                    <span className="font-medium">{leaderboard.length.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Active This Month</span>
-                    <span className="font-medium">3,291</span>
+                    <span className="text-sm">Top Researcher Score</span>
+                    <span className="font-medium">
+                      {leaderboard[0]?.score.toLocaleString() || 0}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Reports Submitted</span>
-                    <span className="font-medium">45,672</span>
+                    <span className="text-sm">Total Reports</span>
+                    <span className="font-medium">
+                      {leaderboard.reduce((sum, r) => sum + r.totalReports, 0).toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Total Bounties Paid</span>
-                    <span className="font-medium">$2.4M</span>
+                    <span className="text-sm">Total Bounties</span>
+                    <span className="font-medium">
+                      ${leaderboard.reduce((sum, r) => sum + r.totalRewards, 0).toLocaleString()}
+                    </span>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Period Info */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Star className="mr-2 h-5 w-5 text-yellow-500" />
+                  Leaderboard Info
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                  <p>
+                    Rankings are based on report scores calculated from priority levels.
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span>Critical:</span>
+                      <span className="font-medium">10 points</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Urgent:</span>
+                      <span className="font-medium">8 points</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>High:</span>
+                      <span className="font-medium">7 points</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Medium:</span>
+                      <span className="font-medium">4 points</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Low:</span>
+                      <span className="font-medium">2 points</span>
+                    </div>
+                  </div>
+                  <p className="text-xs pt-2 border-t">
+                    Auto-refreshes every 5 minutes
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+        </>
+        )}
       </div>
     </ResearcherLayout>
   );

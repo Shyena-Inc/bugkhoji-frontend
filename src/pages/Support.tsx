@@ -7,9 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-// import { Input } from '@/components/ui/input';
-// import { Textarea } from '@/components/ui/textarea';
-// import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion,
@@ -18,32 +15,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  Send,
   HelpCircle,
-  MessageCircle,
   Book,
-  Mail,
-  Phone,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
 const Support = () => {
-  const [contactForm, setContactForm] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Support request submitted:", contactForm);
-    // Here you would typically send the form data to your backend
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setContactForm((prev) => ({ ...prev, [field]: value }));
-  };
+  // Support form is commented out in the UI, so we don't need the state
+  // If you want to enable it, uncomment the contact tab in the UI
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">

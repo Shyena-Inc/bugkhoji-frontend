@@ -1,0 +1,163 @@
+/* Icon Fixes - Ensure all clickable icons have proper hover states and cursor pointers */
+
+/* Base clickable icon styles */
+.icon-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.icon-clickable:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
+}
+
+.icon-clickable:active {
+  transform: scale(0.95);
+}
+
+/* Icon button wrapper styles */
+button .lucide,
+button svg[class*="lucide"] {
+  cursor: pointer;
+}
+
+/* Ensure all icons in buttons have pointer cursor */
+button:not(:disabled) svg {
+  cursor: pointer;
+}
+
+/* Disabled icon styles */
+button:disabled svg,
+.icon-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Icon hover effects for ghost buttons */
+button[class*="ghost"]:hover svg {
+  transform: scale(1.05);
+}
+
+/* Icon hover effects for outline buttons */
+button[class*="outline"]:hover svg {
+  transform: scale(1.05);
+}
+
+/* Dropdown menu icon styles */
+[role="menuitem"] svg,
+.dropdown-menu-item svg {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+[role="menuitem"]:hover svg,
+.dropdown-menu-item:hover svg {
+  transform: translateX(2px);
+}
+
+/* Table action icon styles */
+table button svg {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+table button:hover svg {
+  transform: scale(1.15);
+}
+
+/* Standalone clickable icons (not in buttons) */
+svg.cursor-pointer {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+svg.cursor-pointer:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
+}
+
+/* Navigation icon styles */
+nav a svg,
+.sidebar a svg {
+  transition: all 0.2s ease-in-out;
+}
+
+nav a:hover svg,
+.sidebar a:hover svg {
+  transform: scale(1.05);
+}
+
+/* Card action icon styles */
+.card button svg {
+  cursor: pointer;
+}
+
+/* Icon in link styles */
+a svg {
+  transition: all 0.2s ease-in-out;
+}
+
+a:hover svg {
+  transform: scale(1.05);
+}
+
+/* Ensure proper cursor for all interactive elements with icons */
+[onClick] svg,
+[onclick] svg {
+  cursor: pointer;
+}
+
+/* Status icon styles (non-clickable) */
+.status-icon {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Loading icon styles */
+.animate-spin {
+  cursor: wait;
+}
+
+/* Icon size consistency */
+.icon-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.icon-md {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.icon-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Ensure icons in disabled states don't show pointer */
+[disabled] svg,
+[aria-disabled="true"] svg {
+  cursor: not-allowed !important;
+}
+
+/* Icon color transitions */
+svg {
+  transition: color 0.2s ease-in-out, transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+/* Specific fixes for common patterns */
+.table-actions svg {
+  cursor: pointer;
+}
+
+.table-actions button:hover svg {
+  transform: scale(1.2);
+}
+
+/* Mobile touch targets */
+@media (max-width: 768px) {
+  button svg {
+    min-width: 24px;
+    min-height: 24px;
+  }
+}

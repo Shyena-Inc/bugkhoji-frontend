@@ -1,7 +1,7 @@
 
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, Home, Users, FileText, Bug, MessageSquare, Settings, LogOut, Moon, Sun, Menu, X } from 'lucide-react';
+import { Shield, Home, Users, FileText, Bug, MessageSquare, Settings, LogOut, Moon, Sun, Menu, X, CheckSquare, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
@@ -23,6 +23,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
     { name: 'Manage Users', href: '/admin/manage-users', icon: Users },
     { name: 'Manage Programs', href: '/admin/manage-programs', icon: Shield },
+    { name: 'Verifications', href: '/admin/verifications', icon: CheckSquare },
+    { name: 'Positions', href: '/admin/positions', icon: Briefcase },
     { name: 'Reports', href: '/admin/reports', icon: Bug },
     { name: 'Support', href: '/admin/support', icon: MessageSquare },
     { name: 'Site Settings', href: '/admin/site-settings', icon: Settings },
@@ -56,9 +58,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               variant="ghost"
               size="sm"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
+              {isCollapsed ? <Menu className="h-4 w-4 cursor-pointer" /> : <X className="h-4 w-4 cursor-pointer" />}
             </Button>
           </div>
           
@@ -92,23 +95,24 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <Button
               variant="ghost"
               onClick={toggleDarkMode}
-              className={`w-full justify-start text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl ${
+              className={`w-full justify-start text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer ${
                 isCollapsed ? 'px-3' : ''
               }`}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? <Sun className="h-4 w-4 cursor-pointer" /> : <Moon className="h-4 w-4 cursor-pointer" />}
               {!isCollapsed && <span className="ml-3">{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
             </Button>
             
             <Button
               variant="ghost"
               asChild
-              className={`w-full justify-start text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl ${
+              className={`w-full justify-start text-slate-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl cursor-pointer ${
                 isCollapsed ? 'px-3' : ''
               }`}
             >
-              <Link to="/">
-                <LogOut className="h-4 w-4" />
+              <Link to="/" title="Logout">
+                <LogOut className="h-4 w-4 cursor-pointer" />
                 {!isCollapsed && <span className="ml-3">Logout</span>}
               </Link>
             </Button>

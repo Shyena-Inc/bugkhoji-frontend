@@ -1,40 +1,62 @@
 
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { Shield, MapPin, Clock, DollarSign } from 'lucide-react';
+import { Shield, MapPin, Clock, DollarSign, Loader2, Briefcase, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import api from '@/utils/api';
+import { toast } from '@/hooks/use-toast';
+import { ErrorHandler } from '@/utils/errorHandler';
+
+interface Position {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  type: string;
+  department: string;
+  requirements: string[];
+  responsibilities: string[];
+  salary?: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 const Careers = () => {
-  const jobs = [
-    {
-      title: "Senior Security Engineer",
-      location: "Remote / San Francisco, CA",
-      type: "Full-time",
-      salary: "$140k - $180k",
-      description: "Lead security initiatives and work with our platform security team to ensure BugKhoji🔍 remains secure.",
-    },
-    {
-      title: "Frontend Developer",
-      location: "Remote / New York, NY",
-      type: "Full-time",
-      salary: "$110k - $140k",
-      description: "Build beautiful and intuitive user interfaces for our vulnerability disclosure platform.",
-    },
-    {
-      title: "DevOps Engineer",
-      location: "Remote",
-      type: "Full-time",
-      salary: "$120k - $160k",
-      description: "Manage and scale our cloud infrastructure to support thousands of security researchers.",
-    },
-    {
-      title: "Product Manager",
-      location: "San Francisco, CA",
-      type: "Full-time",
-      salary: "$130k - $170k",
-      description: "Drive product strategy and work closely with security researchers and organizations.",
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+
+  useEffect(() => {
+    fetchPositions();
+  }, []);
+
+  const fetchPositions = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/v1/positions');
+      if (response.data.success) {
+        setPositions(response.data.data);
+      }
+    } catch (error: any) {
+      ErrorHandler.handleApiError(error, 'Failed to load positions');
+      toast({
+        title: 'Error',
+        description: 'Failed to load positions',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleApply = (position: Position) => {
+    // Open email client with pre-filled subject
+    const subject = encodeURIComponent(`Application for ${position.title}`);
+    const body = encodeURIComponent(`Dear Hiring Team,\n\nI am interested in applying for the ${position.title} position.\n\nBest regards,`);
+    window.location.href = `mailto:careers@bugkhoji.com?subject=${subject}&body=${body}`;
+  };
 
   const values = [
     {
@@ -103,39 +125,114 @@ const Careers = () => {
           <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-white mb-12">
             Open Positions
           </h2>
-          <div className="space-y-6">
-            {jobs.map((job, index) => (
-              <Card key={index} className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl text-slate-900 dark:text-white">
-                    {job.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-4 mb-4">
-                    <div className="flex items-center text-slate-600 dark:text-slate-300">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {job.location}
+          
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : positions.length > 0 ? (
+            <div className="space-y-6">
+              {positions.map((position) => (
+                <Card key={position.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl text-slate-900 dark:text-white mb-2">
+                          {position.title}
+                        </CardTitle>
+                        <Badge variant="outline" className="mb-2">
+                          <Briefcase className="h-3 w-3 mr-1" />
+                          {position.department}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center text-slate-600 dark:text-slate-300">
-                      <Clock className="h-4 w-4 mr-2" />
-                      {job.type}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-4 mb-4">
+                      <div className="flex items-center text-slate-600 dark:text-slate-300">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {position.location}
+                      </div>
+                      <div className="flex items-center text-slate-600 dark:text-slate-300">
+                        <Clock className="h-4 w-4 mr-2" />
+                        {position.type}
+                      </div>
+                      {position.salary && (
+                        <div className="flex items-center text-slate-600 dark:text-slate-300">
+                          <DollarSign className="h-4 w-4 mr-2" />
+                          {position.salary}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center text-slate-600 dark:text-slate-300">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      {job.salary}
+                    
+                    <p className="text-slate-600 dark:text-slate-300 mb-4">
+                      {position.description}
+                    </p>
+
+                    {selectedPosition?.id === position.id && (
+                      <div className="mt-4 space-y-4 border-t pt-4">
+                        {position.requirements.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Requirements:</h4>
+                            <ul className="space-y-1">
+                              {position.requirements.map((req, idx) => (
+                                <li key={idx} className="flex items-start text-slate-600 dark:text-slate-300">
+                                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
+                                  <span>{req}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {position.responsibilities.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Responsibilities:</h4>
+                            <ul className="space-y-1">
+                              {position.responsibilities.map((resp, idx) => (
+                                <li key={idx} className="flex items-start text-slate-600 dark:text-slate-300">
+                                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                                  <span>{resp}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => handleApply(position)}
+                      >
+                        Apply Now
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setSelectedPosition(selectedPosition?.id === position.id ? null : position)}
+                      >
+                        {selectedPosition?.id === position.id ? 'Show Less' : 'View Details'}
+                      </Button>
                     </div>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-300 mb-4">
-                    {job.description}
-                  </p>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Apply Now
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-0 shadow-lg">
+              <CardContent className="py-12 text-center">
+                <Briefcase className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                  No Open Positions
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  We don't have any open positions at the moment, but we're always looking for talented individuals.
+                  Feel free to send us your resume!
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </section>
 

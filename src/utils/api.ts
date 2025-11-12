@@ -2,6 +2,7 @@ import axios from 'axios';
 import { API_URL } from './config-global';
 import { QueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
+import { ErrorHandler } from './errorHandler';
 
 let logoutCallback: (() => void) | null = null;
 let isRefreshing = false;
@@ -9,6 +10,178 @@ let failedQueue: Array<{
   resolve: (value?: any) => void;
   reject: (error?: any) => void;
 }> = [];
+
+// Rate limiting queue implementation
+interface QueuedRequest {
+  config: any;
+  resolve: (value: any) => void;
+  reject: (error: any) => void;
+  timestamp: number;
+  retryCount: number;
+}
+
+class RateLimitQueue {
+  private queue: QueuedRequest[] = [];
+  private processing = false;
+  private requestCounts = new Map<string, number>();
+  private resetTimes = new Map<string, number>();
+  
+  // Configuration
+  private readonly maxRequestsPerMinute = 60;
+  private readonly maxRequestsPerHour = 1000;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000; // Base delay in ms
+  private readonly backoffMultiplier = 2;
+
+  constructor() {
+    // Clean up old request counts every minute
+    setInterval(() => this.cleanupOldCounts(), 60000);
+  }
+
+  private cleanupOldCounts() {
+    const now = Date.now();
+    for (const [key, resetTime] of this.resetTimes.entries()) {
+      if (now > resetTime) {
+        this.requestCounts.delete(key);
+        this.resetTimes.delete(key);
+      }
+    }
+  }
+
+  private getMinuteKey(): string {
+    return `minute_${Math.floor(Date.now() / 60000)}`;
+  }
+
+  private getHourKey(): string {
+    return `hour_${Math.floor(Date.now() / 3600000)}`;
+  }
+
+  private canMakeRequest(): boolean {
+    const minuteKey = this.getMinuteKey();
+    const hourKey = this.getHourKey();
+    
+    const requestsThisMinute = this.requestCounts.get(minuteKey) || 0;
+    const requestsThisHour = this.requestCounts.get(hourKey) || 0;
+    
+    return requestsThisMinute < this.maxRequestsPerMinute && 
+           requestsThisHour < this.maxRequestsPerHour;
+  }
+
+  private incrementRequestCount() {
+    const now = Date.now();
+    const minuteKey = this.getMinuteKey();
+    const hourKey = this.getHourKey();
+    
+    // Increment minute counter
+    this.requestCounts.set(minuteKey, (this.requestCounts.get(minuteKey) || 0) + 1);
+    this.resetTimes.set(minuteKey, now + 60000);
+    
+    // Increment hour counter
+    this.requestCounts.set(hourKey, (this.requestCounts.get(hourKey) || 0) + 1);
+    this.resetTimes.set(hourKey, now + 3600000);
+  }
+
+  private async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private calculateRetryDelay(retryCount: number): number {
+    return this.retryDelay * Math.pow(this.backoffMultiplier, retryCount);
+  }
+
+  async enqueue(config: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.queue.push({
+        config,
+        resolve,
+        reject,
+        timestamp: Date.now(),
+        retryCount: 0
+      });
+
+      this.processQueue();
+    });
+  }
+
+  private async processQueue() {
+    if (this.processing || this.queue.length === 0) {
+      return;
+    }
+
+    this.processing = true;
+
+    while (this.queue.length > 0) {
+      if (!this.canMakeRequest()) {
+        // Wait until we can make requests again
+        const waitTime = Math.min(
+          60000 - (Date.now() % 60000), // Wait until next minute
+          1000 // But check every second
+        );
+        await this.delay(waitTime);
+        continue;
+      }
+
+      const queuedRequest = this.queue.shift();
+      if (!queuedRequest) continue;
+
+      try {
+        this.incrementRequestCount();
+        
+        // Make the actual request using the base axios instance (not the intercepted one)
+        const response = await axios(queuedRequest.config);
+        queuedRequest.resolve(response);
+
+      } catch (error: any) {
+        const isRateLimited = error.response?.status === 429 || 
+                             error.response?.status === 503 ||
+                             error.code === 'ECONNABORTED';
+
+        if (isRateLimited && queuedRequest.retryCount < this.maxRetries) {
+          // Retry with exponential backoff
+          queuedRequest.retryCount++;
+          const retryDelay = this.calculateRetryDelay(queuedRequest.retryCount);
+          
+          console.warn(`Rate limited, retrying in ${retryDelay}ms (attempt ${queuedRequest.retryCount}/${this.maxRetries})`);
+          
+          await this.delay(retryDelay);
+          
+          // Re-queue the request
+          this.queue.unshift(queuedRequest);
+          continue;
+        }
+
+        queuedRequest.reject(error);
+      }
+
+      // Small delay between requests to be respectful
+      await this.delay(50);
+    }
+
+    this.processing = false;
+  }
+
+  getQueueStatus() {
+    return {
+      queueLength: this.queue.length,
+      processing: this.processing,
+      requestsThisMinute: this.requestCounts.get(this.getMinuteKey()) || 0,
+      requestsThisHour: this.requestCounts.get(this.getHourKey()) || 0,
+      maxRequestsPerMinute: this.maxRequestsPerMinute,
+      maxRequestsPerHour: this.maxRequestsPerHour
+    };
+  }
+
+  clear() {
+    this.queue.forEach(req => {
+      req.reject(new Error('Queue cleared'));
+    });
+    this.queue = [];
+    this.processing = false;
+  }
+}
+
+// Create rate limit queue instance
+const rateLimitQueue = new RateLimitQueue();
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(({ resolve, reject }) => {
@@ -27,15 +200,61 @@ const api = axios.create({
   headers: {  
     'Content-Type': 'application/json',
   },
-  withCredentials: true
+  withCredentials: true,
+  timeout: 30000 // 30 second timeout
 });
+
+// Request interceptor to add rate limiting
+api.interceptors.request.use(
+  async config => {
+    const token = Cookies.get("accessToken");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // Check if this should be rate limited (skip auth endpoints)
+    const skipRateLimit = config.url?.includes('/v1/refresh') || 
+                         config.url?.includes('/login') ||
+                         config.url?.includes('/register');
+
+    if (!skipRateLimit) {
+      // Route through rate limiting queue
+      try {
+        const response = await rateLimitQueue.enqueue({
+          ...config,
+          baseURL: API_URL
+        });
+        // Return the response directly to bypass the normal request
+        return Promise.reject({ 
+          __isRateLimitedResponse: true, 
+          response 
+        });
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+
+    return config;
+  },
+  error => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
 
 api.interceptors.response.use(
   response => response,
   async error => {
+    // Handle rate limited responses
+    if (error.__isRateLimitedResponse) {
+      return Promise.resolve(error.response);
+    }
+
     const originalRequest = error.config;
 
-    // Check if it's a 401 error and not already retried
+    // Log error for debugging
+    ErrorHandler.logError(error, 'API Request');
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       
       // Prevent refresh token endpoint from triggering refresh loop
@@ -72,30 +291,48 @@ api.interceptors.response.use(
         console.error('No refresh token available, logging out');
         if (logoutCallback) {
           logoutCallback();
-          localStorage.clear();
         }
+        localStorage.clear();
         return Promise.reject(error);
       }
 
       isRefreshing = true;
 
       try {
-        // Make refresh request without interceptor to avoid infinite loop
+        // Make refresh request with proper headers (bypass rate limiting for auth)
         const refreshResponse = await axios.post(
           `${API_URL}/v1/refresh`, 
           {}, 
           { 
             withCredentials: true,
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${refreshToken}`
             }
           }
         );
 
         const newAccessToken = refreshResponse.data.token || refreshResponse.data.accessToken;
+        const newRefreshToken = refreshResponse.data.refreshToken;
 
         if (!newAccessToken) {
           throw new Error("No access token received from refresh endpoint");
+        }
+
+        // Store new tokens in cookies
+        Cookies.set("accessToken", newAccessToken, { 
+          expires: 1, // 1 day
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+
+        // Store new refresh token if provided
+        if (newRefreshToken) {
+          Cookies.set("refreshToken", newRefreshToken, { 
+            expires: 7, // 7 days
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+          });
         }
 
         // Update the default authorization header
@@ -129,29 +366,55 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle rate limit errors
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers['retry-after'];
+      const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+      
+      console.warn(`Rate limited. Waiting ${waitTime}ms before retry`);
+      
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return api(originalRequest);
+    }
+
     return Promise.reject(error);
   }
 );
 
-// Request interceptor to add token to headers
-api.interceptors.request.use(
-  config => {
-    console.log('Request interceptor - current headers:', config.headers);
-    const token = Cookies.get("accessToken");
-    console.log('Access token from cookies:', token);
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-      console.log('Authorization header set');
-    }
-    return config;
-  },
-  error => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  }
-);
+// Helper function to set tokens after login
+export const setTokens = (accessToken: string, refreshToken: string) => {
+  Cookies.set("accessToken", accessToken, { 
+    expires: 1, 
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  });
+  
+  Cookies.set("refreshToken", refreshToken, { 
+    expires: 7, 
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  });
+  
+  api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+};
+
+export const clearTokens = () => {
+  Cookies.remove("accessToken");
+  Cookies.remove("refreshToken");
+  delete api.defaults.headers.common["Authorization"];
+  localStorage.clear();
+  
+  // Clear the rate limit queue
+  rateLimitQueue.clear();
+};
+
 export const setLogoutCallback = (callback: () => void) => {
   logoutCallback = callback;
+};
+
+// Export rate limit queue status for monitoring
+export const getRateLimitStatus = () => {
+  return rateLimitQueue.getQueueStatus();
 };
 
 export const queryClient = new QueryClient({
@@ -159,8 +422,11 @@ export const queryClient = new QueryClient({
     queries: { 
       refetchOnWindowFocus: false, 
       retry: (failureCount, error: any) => {
-        // Don't retry on 401 errors to avoid unnecessary requests
         if (error?.response?.status === 401) {
+          return false;
+        }
+        // Don't retry rate limited requests (they're handled by the queue)
+        if (error?.response?.status === 429) {
           return false;
         }
         return failureCount < 3;
@@ -176,7 +442,7 @@ export const endpoints = {
     loginOrganization: '/v1/login/organization',
     registerResearcher: "/v1/register/researcher",
     registerOrganization: "/v1/register/organization",
-    logout: '/auth/logout',
+    logout: '/v1/logout',
     rotateToken: '/v1/refresh',
     verify: '/auth/verify',
     resendVerification: '/auth/resend-verification',
@@ -194,6 +460,21 @@ export const endpoints = {
     markNotificationRead: (id: string) => `/user/notifications/${id}/read`,
     updateRole: '/user/role',
     getRolePermissions: '/user/permissions',
+  },
+   profile: {
+    // User profile endpoints
+    getUserProfile: '/api/user/profile',
+    updateUserProfile: '/api/user/profile',
+    deleteUserProfile: '/api/user/profile',
+    
+    // Organization profile endpoints
+    getOrganizationProfile: '/api/user/organization/profile',
+    updateOrganizationProfile: '/api/user/organization/profile',
+    deleteOrganizationProfile: '/api/user/organization/profile',
+    
+    // Public profile endpoints
+    getPublicUserProfile: (userId: string) => `/api/v1/profile/public/user/${userId}`,
+    getPublicOrganizationProfile: (organizationId: string) => `/api/v1/profile/public/organization/${organizationId}`,
   },
 
   password: {
@@ -246,31 +527,34 @@ export const endpoints = {
   organizer: {
     dashboard: '/organizer/dashboard',
     programs: {
-      all: (page: number = 1) => `/organizer/programs?page=${page}`,
-      create: '/organizer/programs',
-      update: (id: string) => `/organizer/programs/${id}`,
-      delete: (id: string) => `/organizer/programs/${id}`,
-      getById: (id: string) => `/organizer/programs/${id}`,
-      getStats: (id: string) => `/organizer/programs/${id}/stats`,
-      getParticipants: (id: string) => `/organizer/programs/${id}/participants`,
-      invite: (id: string) => `/organizer/programs/${id}/invite`,
-      removeParticipant: (programId: string, userId: string) => `/organizer/programs/${programId}/participants/${userId}`,
-      publish: (id: string) => `/organizer/programs/${id}/publish`,
-      pause: (id: string) => `/organizer/programs/${id}/pause`,
-      resume: (id: string) => `/organizer/programs/${id}/resume`,
-      archive: (id: string) => `/organizer/programs/${id}/archive`,
-    },
-    reports: {
-      all: (page: number = 1) => `/organizer/reports?page=${page}`,
-      getById: (id: string) => `/organizer/reports/${id}`,
-      getByProgram: (programId: string, page: number = 1) => `/organizer/reports/program/${programId}?page=${page}`,
-      updateStatus: (id: string) => `/organizer/reports/${id}/status`,
-      assignSeverity: (id: string) => `/organizer/reports/${id}/severity`,
-      approve: (id: string) => `/organizer/reports/${id}/approve`,
-      reject: (id: string) => `/organizer/reports/${id}/reject`,
-      markDuplicate: (id: string) => `/organizer/reports/${id}/duplicate`,
-      addComment: (id: string) => `/organizer/reports/${id}/comments`,
-      assignReward: (id: string) => `/organizer/reports/${id}/reward`,
+  // Organization endpoints
+  all: (page: number = 1) => `/api/v1/programs?page=${page}`,
+  create: '/api/v1/programs',
+  update: (id: string) => `/api/v1/programs/${id}`,
+  delete: (id: string) => `/api/v1/programs/${id}`,
+  getById: (id: string) => `/api/v1/programs/${id}`,
+  
+  // These endpoints don't exist in your backend routes - need to be added
+  getStats: (id: string) => `/api/v1/programs/${id}/stats`,
+  getParticipants: (id: string) => `/api/v1/programs/${id}/participants`,
+  invite: (id: string) => `/api/v1/programs/${id}/invite`,
+  removeParticipant: (programId: string, userId: string) => `/api/v1/programs/${programId}/participants/${userId}`,
+  
+  // Status updates - these need to be mapped to your existing status endpoint
+  publish: (id: string) => `/api/v1/programs/${id}/status`, // Use PATCH with status: 'active'
+  pause: (id: string) => `/api/v1/programs/${id}/status`,   // Use PATCH with status: 'paused'
+  resume: (id: string) => `/api/v1/programs/${id}/status`,  // Use PATCH with status: 'active'
+  archive: (id: string) => `/api/v1/programs/${id}/status`, // Use PATCH with status: 'archived'
+},ts: {
+      all: (page: number = 1) => `/api/v1/reports?page=${page}`,
+      getById: (id: string) => `/api/v1/reports/${id}`,
+      getByProgram: (programId: string, page: number = 1) => `/api/v1/reports/program/${programId}?page=${page}`,
+      getBySubmission: (submissionId: string) => `/api/v1/reports/submission/${submissionId}`,
+      create: '/api/v1/reports',
+      update: (id: string) => `/api/v1/reports/${id}`,
+      delete: (id: string) => `/api/v1/reports/${id}`,
+      publish: (id: string) => `/api/v1/reports/${id}/publish`,
+      myReports: '/api/v1/reports/my-reports',
     },
     rewards: {
       pending: '/organizer/rewards/pending',
@@ -298,30 +582,24 @@ export const endpoints = {
   },
 
   admin: {
-    dashboard: '/admin/dashboard',
+    dashboard: '/api/v1/admin/dashboard',
     users: {
-      all: (page: number = 1) => `/admin/users?page=${page}`,
-      getById: (id: string) => `/admin/users/${id}`,
-      researchers: (page: number = 1) => `/admin/users/researchers?page=${page}`,
-      organizers: (page: number = 1) => `/admin/users/organizers?page=${page}`,
-      admins: (page: number = 1) => `/admin/users/admins?page=${page}`,
-      ban: (id: string) => `/admin/users/${id}/ban`,
-      unban: (id: string) => `/admin/users/${id}/unban`,
-      updateRole: (id: string) => `/admin/users/${id}/role`,
-      delete: (id: string) => `/admin/users/${id}`,
-      verify: (id: string) => `/admin/users/${id}/verify`,
-      stats: '/admin/users/stats',
+      all: (page: number = 1) => `/api/v1/admin/users?page=${page}`,
+      getById: (id: string) => `/api/v1/admin/users/${id}`,
+      ban: (id: string) => `/api/v1/admin/users/${id}/ban`,
+      unban: (id: string) => `/api/v1/admin/users/${id}/unban`,
+      updateRole: (id: string) => `/api/v1/admin/users/${id}/role`,
+      delete: (id: string) => `/api/v1/admin/users/${id}`,
+      verify: (id: string) => `/api/v1/admin/users/${id}/verify`,
+      stats: '/api/v1/admin/users/stats',
     },
     programs: {
-      all: (page: number = 1) => `/admin/programs?page=${page}`,
-      pending: '/admin/programs/pending',
-      approved: '/admin/programs/approved',
-      rejected: '/admin/programs/rejected',
-      approve: (id: string) => `/admin/programs/${id}/approve`,
-      reject: (id: string) => `/admin/programs/${id}/reject`,
-      suspend: (id: string) => `/admin/programs/${id}/suspend`,
-      delete: (id: string) => `/admin/programs/${id}`,
-      stats: '/admin/programs/stats',
+      all: (page: number = 1) => `/api/v1/admin/programs?page=${page}`,
+      approve: (id: string) => `/api/v1/admin/programs/${id}/approve`,
+      reject: (id: string) => `/api/v1/admin/programs/${id}/reject`,
+      suspend: (id: string) => `/api/v1/admin/programs/${id}/suspend`,
+      delete: (id: string) => `/api/v1/admin/programs/${id}`,
+      stats: '/api/v1/admin/programs/stats',
     },
     reports: {
       all: (page: number = 1) => `/admin/reports?page=${page}`,
@@ -364,6 +642,11 @@ export const endpoints = {
       update: (id: string) => `/admin/roles/${id}`,
       delete: (id: string) => `/admin/roles/${id}`,
     },
+    verifications: {
+      pending: '/api/v1/admin/verifications/pending',
+      approve: (id: string) => `/api/v1/admin/organizations/${id}/approve`,
+      reject: (id: string) => `/api/v1/admin/organizations/${id}/reject`,
+    },
   },
 
   notifications: {
@@ -389,6 +672,11 @@ export const endpoints = {
     stats: '/public/stats',
     leaderboard: '/public/leaderboard',
     hall_of_fame: '/public/hall-of-fame',
+  },
+
+  contact: {
+    submit: '/api/v1/contact',
+    support: '/api/v1/contact/support',
   },
 };
 

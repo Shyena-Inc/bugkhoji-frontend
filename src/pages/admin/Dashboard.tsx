@@ -12,82 +12,35 @@ import {
   CheckCircle,
   AlertTriangle,
   XCircle,
-  TrendingUp,
+  Loader2,
 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useAdminDashboard, useGetUserStats } from "@/api/admin";
 
 const AdminDashboard = () => {
-  // Mock data
+  const { data: dashboardData, isLoading: dashboardLoading } = useAdminDashboard();
+  const { data: userStatsData, isLoading: userStatsLoading } = useGetUserStats();
+
+  const isLoading = dashboardLoading || userStatsLoading;
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
   const stats = {
-    totalResearchers: 1247,
-    totalOrganizations: 89,
-    totalReports: 3456,
-    openReports: 156,
-    triagedReports: 89,
-    resolvedReports: 3211,
+    totalResearchers: userStatsData?.data?.researchers || 0,
+    totalOrganizations: userStatsData?.data?.organizations || 0,
+    totalReports: dashboardData?.data?.reports?.total || 0,
+    openReports: dashboardData?.data?.reports?.pending || 0,
+    activeUsers: userStatsData?.data?.activeUsers || 0,
+    totalUsers: userStatsData?.data?.totalUsers || 0,
   };
-
-  const severityData = [
-    { name: "Critical", value: 45, color: "#ef4444" },
-    { name: "High", value: 123, color: "#f97316" },
-    { name: "Medium", value: 234, color: "#eab308" },
-    { name: "Low", value: 167, color: "#22c55e" },
-    { name: "Info", value: 89, color: "#3b82f6" },
-  ];
-
-  const monthlyReports = [
-    { month: "Jan", reports: 234 },
-    { month: "Feb", reports: 267 },
-    { month: "Mar", reports: 298 },
-    { month: "Apr", reports: 334 },
-    { month: "May", reports: 389 },
-    { month: "Jun", reports: 445 },
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      action: "New researcher registered",
-      user: "john@example.com",
-      time: "2 minutes ago",
-    },
-    {
-      id: 2,
-      action: "Critical vulnerability reported",
-      program: "TechCorp Bug Bounty",
-      time: "15 minutes ago",
-    },
-    {
-      id: 3,
-      action: "Report marked as resolved",
-      reportId: "VUL-2024-001",
-      time: "1 hour ago",
-    },
-    {
-      id: 4,
-      action: "New program created",
-      program: "StartupX Security",
-      time: "2 hours ago",
-    },
-    {
-      id: 5,
-      action: "User account suspended",
-      user: "suspicious@domain.com",
-      time: "3 hours ago",
-    },
-  ];
 
   return (
     <AdminLayout>
@@ -169,7 +122,7 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Report Status Cards */}
+        {/* User Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardContent className="p-6">
@@ -177,10 +130,10 @@ const AdminDashboard = () => {
                 <CheckCircle className="h-8 w-8 text-green-500" />
                 <div>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Resolved
+                    Active Users
                   </p>
                   <p className="text-2xl font-bold">
-                    {stats.resolvedReports.toLocaleString()}
+                    {stats.activeUsers.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -193,9 +146,9 @@ const AdminDashboard = () => {
                 <AlertTriangle className="h-8 w-8 text-yellow-500" />
                 <div>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Triaged
+                    Pending Reports
                   </p>
-                  <p className="text-2xl font-bold">{stats.triagedReports}</p>
+                  <p className="text-2xl font-bold">{stats.openReports}</p>
                 </div>
               </div>
             </CardContent>
@@ -207,98 +160,16 @@ const AdminDashboard = () => {
                 <XCircle className="h-8 w-8 text-red-500" />
                 <div>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Open
+                    Inactive Users
                   </p>
-                  <p className="text-2xl font-bold">{stats.openReports}</p>
+                  <p className="text-2xl font-bold">
+                    {(stats.totalUsers - stats.activeUsers).toLocaleString()}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Severity Distribution</CardTitle>
-              <CardDescription>
-                Breakdown of reports by severity level
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={severityData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {severityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Reports</CardTitle>
-              <CardDescription>
-                Report submissions over the last 6 months
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyReports}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="reports" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5" />
-              <span>Recent Activity</span>
-            </CardTitle>
-            <CardDescription>
-              Latest platform events and user actions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50"
-                >
-                  <div>
-                    <p className="font-medium">{activity.action}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {activity.user || activity.program || activity.id}
-                    </p>
-                  </div>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    {activity.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </AdminLayout>
   );

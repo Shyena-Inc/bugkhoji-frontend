@@ -88,6 +88,7 @@ const registerOrganization = async (data: OrganizationRegisterFormData) => {
 
 const organizationTypes = [
   "Healthcare Institution",
+  "Information Technology",
   "Research University",
   "Pharmaceutical Company",
   "Biotechnology Company",
@@ -98,7 +99,7 @@ const organizationTypes = [
   "Other",
 ]
 
-const countries = ["United States", "Canada", "United Kingdom", "Germany", "France", "Australia", "Japan", "Other"]
+const countries = ["United States","Nepal", "Canada", "United Kingdom", "Germany", "France", "Australia", "Japan", "Other"]
 
 export default function OrganizationRegisterPage() {
   const navigate = useNavigate()

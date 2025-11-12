@@ -40,7 +40,7 @@ export default function RegisterForm({ onSubmit, role = "RESEARCHER", showTitle 
           lastName: "",
           password: "",
           role: "RESEARCHER" as const,
-          termsAccepted: false,
+          termsAccepted: acceptTerms,
         }
       : {
           email: "",
@@ -49,7 +49,7 @@ export default function RegisterForm({ onSubmit, role = "RESEARCHER", showTitle 
           description: "",
           password: "",
           role: "ORGANIZATION" as const,
-          termsAccepted: false,
+          termsAccepted: acceptTerms,
         }, [role]
   )
 
@@ -201,7 +201,7 @@ export default function RegisterForm({ onSubmit, role = "RESEARCHER", showTitle 
 
       setFormData(initialFormData)
       setAcceptTerms(false)
-      const dashboardRoute = role === "RESEARCHER" ? "/researcher/dashboard" : "/organization/dashboard"
+      const dashboardRoute = role === "RESEARCHER" ? "/researcher/dashboard" : "/organization/verification"
       navigate(dashboardRoute)
     } catch (error: unknown) {
       console.error("Registration error:", error)
@@ -663,7 +663,7 @@ export default function RegisterForm({ onSubmit, role = "RESEARCHER", showTitle 
             <button
               type="button"
               className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
-              onClick={() => navigate("/login/researcher")}
+              onClick={() => navigate("/researcher/login")}
             >
               Sign in here
             </button>

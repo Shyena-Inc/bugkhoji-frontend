@@ -4,8 +4,11 @@ export interface BaseUser {
   id: number;
   email: string;
   role: UserRole;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isActive?: boolean;
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string;
 }
 
 export interface ResearcherUser extends BaseUser {
@@ -13,13 +16,18 @@ export interface ResearcherUser extends BaseUser {
   username: string;
   firstName: string;
   lastName: string;
+  logo?: string;
 }
 
 export interface OrganizationUser extends BaseUser {
   role: "ORGANIZATION";
   organizationName: string;
-  website: string;
-  description: string;
+  organizationId?: string;
+  website?: string;
+  description?: string;
+  logo?: string;
+  verified?: boolean;
+  verificationStatus?: string;
 }
 
 export interface AdminUser extends BaseUser {
